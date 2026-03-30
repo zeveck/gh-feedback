@@ -1,0 +1,9 @@
+name = "gh-feedback-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+GITHUB_REPO = "owner/repo"
+# WARNING: Change ALLOWED_ORIGINS before deploying to production!
+# Use your site's origin (e.g., "https://example.com") to prevent abuse.
+ALLOWED_ORIGINS = "*"

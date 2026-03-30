@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gh-feedback Test Fixture</title>
+  <script type="module" src="../../gh-feedback.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: sans-serif; }
+    #event-log { margin-top: 40px; font-size: 12px; color: #666; }
+    .event-entry { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1>gh-feedback Test Page</h1>
+
+  <!-- Default: proxy mode, bottom-right -->
+  <gh-feedback id="default" repo="test/repo" endpoint="/feedback"></gh-feedback>
+
+  <!-- Dark theme -->
+  <gh-feedback id="dark" repo="test/repo" endpoint="/feedback" theme="dark"></gh-feedback>
+
+  <!-- Positions -->
+  <gh-feedback id="top-left" repo="test/repo" endpoint="/feedback" position="top-left"></gh-feedback>
+  <gh-feedback id="top-right" repo="test/repo" endpoint="/feedback" position="top-right"></gh-feedback>
+  <gh-feedback id="bottom-left" repo="test/repo" endpoint="/feedback" position="bottom-left"></gh-feedback>
+
+  <!-- With button-text (pill shape) -->
+  <gh-feedback id="pill" repo="test/repo" endpoint="/feedback" button-text="Help"></gh-feedback>
+
+  <!-- No config (no endpoint or token) — for error testing -->
+  <gh-feedback id="no-config" repo="test/repo"></gh-feedback>
+
+  <!-- With labels attribute -->
+  <gh-feedback id="with-labels" repo="test/repo" endpoint="/feedback" labels="feedback,user-reported"></gh-feedback>
+
+  <!-- Direct mode (with token, no endpoint) -->
+  <gh-feedback id="direct" repo="test/repo" token="ghp_test123"></gh-feedback>
+
+  <!-- Trigger: button -->
+  <gh-feedback id="trigger-btn" repo="test/repo" endpoint="/feedback" trigger="button"></gh-feedback>
+
+  <!-- Trigger: link -->
+  <gh-feedback id="trigger-link" repo="test/repo" endpoint="/feedback" trigger="link" button-text="Send feedback"></gh-feedback>
+
+  <!-- Severity field -->
+  <gh-feedback id="with-severity" repo="test/repo" endpoint="/feedback" show-severity></gh-feedback>
+
+  <!-- Direct mode with severity (for testing priority labels) -->
+  <gh-feedback id="direct-severity" repo="test/repo" token="ghp_test123" show-severity></gh-feedback>
+
+  <!-- Icon variants -->
+  <gh-feedback id="icon-bug" repo="test/repo" endpoint="/feedback" icon="bug"></gh-feedback>
+  <gh-feedback id="icon-megaphone" repo="test/repo" endpoint="/feedback" icon="megaphone"></gh-feedback>
+  <gh-feedback id="icon-lightbulb" repo="test/repo" endpoint="/feedback" icon="lightbulb"></gh-feedback>
+  <gh-feedback id="icon-pencil" repo="test/repo" endpoint="/feedback" icon="pencil"></gh-feedback>
+
+  <!-- Size variants -->
+  <gh-feedback id="size-sm" repo="test/repo" endpoint="/feedback" size="sm"></gh-feedback>
+  <gh-feedback id="size-md" repo="test/repo" endpoint="/feedback" size="md"></gh-feedback>
+  <gh-feedback id="size-lg" repo="test/repo" endpoint="/feedback" size="lg"></gh-feedback>
+
+  <!-- Custom color -->
+  <gh-feedback id="custom-color" repo="test/repo" endpoint="/feedback" color="#6f42c1"></gh-feedback>
+
+  <!-- Popup color -->
+  <gh-feedback id="popup-color" repo="test/repo" endpoint="/feedback" popup-color="#6f42c1"></gh-feedback>
+
+  <!-- Popup color independent of trigger color -->
+  <gh-feedback id="popup-color-indep" repo="test/repo" endpoint="/feedback" color="#ff0000" popup-color="#0000ff"></gh-feedback>
+
+  <!-- Custom types -->
+  <gh-feedback id="custom-types" repo="test/repo" endpoint="/feedback" types="bug,feature,question,ui"></gh-feedback>
+
+  <!-- No type icons -->
+  <gh-feedback id="no-type-icons" repo="test/repo" endpoint="/feedback" no-type-icons></gh-feedback>
+
+  <!-- Icon: memo (default, explicit) -->
+  <gh-feedback id="icon-memo" repo="test/repo" endpoint="/feedback" icon="memo"></gh-feedback>
+
+  <!-- Icon: none -->
+  <gh-feedback id="icon-none" repo="test/repo" endpoint="/feedback" icon="none"></gh-feedback>
+
+  <!-- Repo as full URL -->
+  <gh-feedback id="repo-url" repo="https://github.com/test/repo" endpoint="/feedback"></gh-feedback>
+
+  <!-- Border customization -->
+  <gh-feedback id="border-custom" repo="test/repo" endpoint="/feedback" border-color="#333" border-width="2" border-radius="4"></gh-feedback>
+
+  <!-- Pixel size -->
+  <gh-feedback id="size-px" repo="test/repo" endpoint="/feedback" size="40"></gh-feedback>
+
+  <!-- Trigger: none (API testing) -->
+  <gh-feedback id="trigger-none" repo="test/repo" endpoint="/feedback" trigger="none"></gh-feedback>
+
+  <!-- Context testing -->
+  <gh-feedback id="with-context" repo="test/repo" endpoint="/feedback"></gh-feedback>
+
+  <!-- Event log -->
+  <div id="event-log"></div>
+
+  <script type="module">
+    const log = document.getElementById('event-log');
+    document.addEventListener('gh-feedback:submit', (e) => {
+      const entry = document.createElement('div');
+      entry.className = 'event-entry';
+      entry.dataset.event = 'submit';
+      entry.textContent = `submit: ${JSON.stringify(e.detail)}`;
+      log.appendChild(entry);
+    });
+    document.addEventListener('gh-feedback:filed', (e) => {
+      const entry = document.createElement('div');
+      entry.className = 'event-entry';
+      entry.dataset.event = 'filed';
+      entry.textContent = `filed: ${JSON.stringify(e.detail)}`;
+      log.appendChild(entry);
+    });
+  </script>
+</body>
+</html>

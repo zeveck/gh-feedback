@@ -1,0 +1,22 @@
+{
+  "name": "@zeveck/gh-feedback",
+  "version": "1.0.0",
+  "description": "A Web Component that adds a feedback button to any site and files GitHub Issues",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/worker.test.js",
+    "test:e2e": "npx playwright test",
+    "test:all": "npm test && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "serve": "^14.0.0"
+  },
+  "keywords": ["web-component", "feedback", "github-issues", "custom-element"],
+  "author": "zeveck",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zeveck/gh-feedback.git"
+  }
+}

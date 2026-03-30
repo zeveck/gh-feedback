@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gh-feedback — Interactive Configurator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --text: #1f2328;
+      --muted: #656d76;
+      --border: #d1d9e0;
+      --code-bg: #f6f8fa;
+      --accent: #238636;
+      --section-bg: #f6f8fa;
+      --card-bg: #ffffff;
+      --control-bg: #f6f8fa;
+      --control-active: #238636;
+      --control-active-text: #ffffff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --border: #30363d;
+        --code-bg: #161b22;
+        --accent: #238636;
+        --section-bg: #161b22;
+        --card-bg: #161b22;
+        --control-bg: #21262d;
+        --control-active: #238636;
+        --control-active-text: #ffffff;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 40px 24px 24px;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .hero h1 code {
+      background: var(--code-bg);
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 2.2rem;
+    }
+    .hero .tagline {
+      font-size: 1.15rem;
+      color: var(--muted);
+      margin: 0 auto;
+      white-space: nowrap;
+    }
+
+    /* Playground */
+    .playground {
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      gap: 20px;
+      margin: 0 auto 32px;
+      max-width: 1200px;
+      padding: 0 24px;
+    }
+    @media (max-width: 900px) {
+      .playground {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .preview-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      min-height: 280px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-card .preview-hint {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .controls-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .controls-card h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .controls-card h3:not(:first-child) {
+      margin-top: 16px;
+    }
+    .form-table { border-collapse: collapse; width: 100%; border: none; }
+    .form-table td { padding: 7px 0; vertical-align: middle; border: none; }
+    .form-table tr { border: none; }
+    .form-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; padding-right: 12px !important; width: 1%; border: none; }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .pill-btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--control-bg);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      font-family: inherit;
+    }
+    .pill-btn:hover { border-color: var(--accent); }
+    .pill-btn.active {
+      background: var(--control-active);
+      color: var(--control-active-text);
+      border-color: var(--control-active);
+    }
+
+    .control-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .control-inline label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      min-width: 50px;
+    }
+    .control-inline input[type="color"] {
+      width: 36px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      cursor: pointer;
+      background: var(--control-bg);
+    }
+    .control-inline input[type="text"] {
+      flex: 1;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--control-bg);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: inherit;
+    }
+    .control-inline input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .control-inline select {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--control-bg);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .control-inline select:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .control-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .control-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .control-check label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* Code output */
+    .code-output {
+      max-width: 1200px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+      position: relative;
+    }
+    .code-output pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 16px 16px 16px;
+      overflow-x: auto;
+      font-size: 0.83rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .code-output .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--control-bg);
+      color: var(--text);
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .code-output .copy-btn:hover { background: var(--border); }
+
+    #demo-log {
+      max-width: 1200px;
+      margin: -16px auto 48px;
+      padding: 0 24px;
+      font-size: 0.83rem;
+      color: var(--accent);
+      min-height: 1.4em;
+    }
+
+    /* Docs sections */
+    section {
+      padding: 48px 0;
+      border-top: 1px solid var(--border);
+    }
+    section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+    }
+    section h3 {
+      font-size: 1.1rem;
+      margin: 24px 0 8px;
+    }
+    section p, section li {
+      margin-bottom: 8px;
+    }
+    section ul, section ol {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.85em;
+    }
+    p code, li code, td code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    th {
+      background: var(--section-bg);
+      font-weight: 600;
+    }
+
+    .warning {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-left: 4px solid #ffa000;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin: 12px 0 20px;
+      font-size: 0.88rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .warning {
+        background: #2a2000;
+        border-color: #5c4a00;
+      }
+    }
+
+    footer {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .hero { padding: 40px 16px 28px; }
+      .hero h1 { font-size: 1.8rem; }
+      .hero h1 code { font-size: 1.6rem; }
+      .hero .tagline { font-size: 1rem; }
+      table { font-size: 0.8rem; }
+      th, td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1><code>&lt;gh-feedback&gt;</code></h1>
+    <p class="tagline">Add a feedback button to any website. Files GitHub Issues.</p>
+  </div>
+
+  <!-- Interactive Playground -->
+  <div class="playground">
+    <!-- Left column: Trigger Button controls -->
+    <div class="controls-card">
+      <h3 style="margin-bottom:2px;font-size:0.95rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Trigger Button</h3>
+
+      <table class="form-table">
+        <tr><td class="form-label">Style</td><td><div class="control-row" data-group="trigger"><button class="pill-btn" data-value="fab">FAB</button><button class="pill-btn active" data-value="button">Button</button><button class="pill-btn" data-value="link">Link</button></div></td></tr>
+        <tr><td class="form-label">Icon</td><td><div class="control-row" data-group="icon"><button class="pill-btn" data-value="chat" title="Chat"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></button><button class="pill-btn" data-value="bug" title="Bug"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 8h-2.81a5.985 5.985 0 0 0-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5s-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg></button><button class="pill-btn" data-value="megaphone" title="Megaphone"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1l5 6V3L5 9H4z"/></svg></button><button class="pill-btn" data-value="lightbulb" title="Lightbulb"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></button><button class="pill-btn" data-value="pencil" title="Pencil"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button><button class="pill-btn" data-value="flag" title="Flag"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14.4 6l-.24-1.2c-.09-.46-.5-.8-.98-.8H6c-.55 0-1 .45-1 1v15h2v-6h5.6l.24 1.2c.09.47.5.8.98.8H19c.55 0 1-.45 1-1V7c0-.55-.45-1-1-1h-4.6z"/></svg></button><button class="pill-btn active" data-value="memo" title="Memo"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 17h8v-2H8v2zm0-4h8v-2H8v2zm0-4h5V7H8v2z"/></svg></button><button class="pill-btn" data-value="none" title="None">&#x2715;</button></div></td></tr>
+        <tr><td class="form-label">Size</td><td><div class="control-row" data-group="size" style="display:inline-flex;"><button class="pill-btn" data-value="sm">S</button><button class="pill-btn active" data-value="md">M</button><button class="pill-btn" data-value="lg">L</button></div> <input type="number" id="ctrl-size-px" min="20" max="120" placeholder="48" style="width:50px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--control-bg);color:var(--text);font-size:0.8rem;font-family:inherit;vertical-align:middle;margin-left:6px;"></td></tr>
+        <tr><td class="form-label">Color</td><td><input type="color" id="ctrl-color" value="#238636" style="vertical-align:middle;"> <input type="text" id="ctrl-button-text" placeholder="Label text" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--control-bg);color:var(--text);font-size:0.8rem;font-family:inherit;margin-left:8px;vertical-align:middle;"></td></tr>
+        <tr><td class="form-label">Border</td><td class="control-inline" style="flex-wrap:wrap;gap:4px;"><input type="color" id="ctrl-border-color" value="#666666" style="vertical-align:middle;"> <input type="number" id="ctrl-border-width" min="0" max="5" placeholder="w" value="0" style="width:40px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--control-bg);color:var(--text);font-size:0.8rem;font-family:inherit;"> <input type="number" id="ctrl-border-radius" min="0" max="50" value="6" placeholder="r" style="width:40px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--control-bg);color:var(--text);font-size:0.8rem;font-family:inherit;"></td></tr>
+        <tr><td class="form-label">Position <span style="font-weight:400;font-size:0.65rem;display:block;letter-spacing:0;text-transform:none;">(FAB only)</span></td><td><select id="ctrl-position" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--control-bg);color:var(--text);font-size:0.8rem;font-family:inherit;"><option value="bottom-right" selected>Bottom Right</option><option value="bottom-left">Bottom Left</option><option value="top-right">Top Right</option><option value="top-left">Top Left</option></select></td></tr>
+      </table>
+    </div>
+
+    <!-- Center column: Live preview -->
+    <div class="preview-card" id="preview-card">
+      <div class="preview-hint" id="preview-hint">Look for the feedback button in the corner of the page ↘</div>
+    </div>
+
+    <!-- Right column: Popup controls -->
+    <div class="controls-card">
+      <table class="form-table">
+        <tr><td class="form-label">Theme</td><td><div class="control-row" data-group="theme"><button class="pill-btn active" data-value="light">Light</button><button class="pill-btn" data-value="dark">Dark</button></div></td></tr>
+        <tr><td class="form-label">Color</td><td><input type="color" id="ctrl-popup-color" value="#238636" style="vertical-align:middle;"></td></tr>
+        <tr><td class="form-label">Categories</td><td><div id="type-checks" style="display:flex;flex-wrap:wrap;gap:4px;"><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="bug" checked>Bug</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="feature" checked>Feature</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="question" checked>Question</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="ui">UI</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="docs">Docs</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="performance">Perf</label></div></td></tr>
+      </table>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" id="ctrl-severity" checked> Show severity</label>
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" id="ctrl-type-icons" checked> Category icons</label>
+      </div>
+    </div>
+
+    <!-- Code snippet spans full width below the three columns -->
+    <div class="code-output" style="grid-column:1/-1;max-width:none;padding:0;margin:0;">
+      <button class="copy-btn" id="copy-btn">Copy</button>
+      <pre><code id="code-snippet"></code></pre>
+    </div>
+  </div>
+
+  <div id="demo-log"></div>
+
+  <!-- Documentation -->
+  <div class="container">
+
+    <section id="setup">
+      <h2>Setup</h2>
+      <h3>1. Add the component to your page</h3>
+      <p>Copy <a href="./gh-feedback.js"><code>gh-feedback.js</code></a> into your project and add to your HTML:</p>
+      <pre><code>&lt;script type="module" src="gh-feedback.js"&gt;&lt;/script&gt;
+&lt;gh-feedback
+  repo="https://github.com/you/repo"
+  endpoint="https://your-worker.workers.dev/feedback"
+&gt;&lt;/gh-feedback&gt;</code></pre>
+      <p>A hosted copy is also available as a convenience:</p>
+      <pre><code>&lt;script type="module" src="https://gh-feedback.synapticnoise.com/gh-feedback.js"&gt;&lt;/script&gt;</code></pre>
+      <h3>2. Deploy a proxy backend</h3>
+      <p>The component needs a backend to securely file GitHub Issues (so your token stays server-side). See <a href="#proxy-setup">Proxy Setup</a> below, or use any backend that accepts the JSON payload.</p>
+    </section>
+
+    <section id="attributes">
+      <h2>Attributes Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>repo</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>GitHub repository URL or <code>owner/repo</code> format. Required.</td>
+          </tr>
+          <tr>
+            <td><code>endpoint</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>URL of the proxy endpoint (recommended). Component POSTs JSON here.</td>
+          </tr>
+          <tr>
+            <td><code>token</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>GitHub PAT for direct mode. Exposed in page source -- use proxy mode for public sites.</td>
+          </tr>
+          <tr>
+            <td><code>trigger</code></td>
+            <td>string</td>
+            <td><code>fab</code></td>
+            <td>Trigger style: <code>fab</code> (floating action button), <code>button</code> (inline button), <code>link</code> (text link), or <code>none</code> (no trigger; open programmatically).</td>
+          </tr>
+          <tr>
+            <td><code>icon</code></td>
+            <td>string</td>
+            <td><code>memo</code></td>
+            <td>Icon: <code>chat</code>, <code>bug</code>, <code>megaphone</code>, <code>lightbulb</code>, <code>pencil</code>, <code>flag</code>, <code>memo</code>, <code>none</code>.</td>
+          </tr>
+          <tr>
+            <td><code>size</code></td>
+            <td>string</td>
+            <td><code>md</code></td>
+            <td>Size: <code>sm</code>, <code>md</code>, <code>lg</code>, or a number for pixel size (e.g. <code>40</code>).</td>
+          </tr>
+          <tr>
+            <td><code>color</code></td>
+            <td>string</td>
+            <td><code>#238636</code></td>
+            <td>Primary color (hex). Sets the FAB, button, and accent color.</td>
+          </tr>
+          <tr>
+            <td><code>position</code></td>
+            <td>string</td>
+            <td><code>bottom-right</code></td>
+            <td>FAB corner position: <code>bottom-right</code>, <code>bottom-left</code>, <code>top-right</code>, <code>top-left</code>. Only applies when <code>trigger="fab"</code>.</td>
+          </tr>
+          <tr>
+            <td><code>theme</code></td>
+            <td>string</td>
+            <td><code>light</code></td>
+            <td>Popup color theme: <code>light</code> or <code>dark</code>.</td>
+          </tr>
+          <tr>
+            <td><code>labels</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Comma-separated labels added to every issue (e.g. <code>"feedback,ui"</code>).</td>
+          </tr>
+          <tr>
+            <td><code>button-text</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Text shown on the trigger. For FAB, makes it pill-shaped.</td>
+          </tr>
+          <tr>
+            <td><code>show-severity</code></td>
+            <td>boolean</td>
+            <td>--</td>
+            <td>When present, shows a severity selector (Low / Medium / High / Critical) for bug reports.</td>
+          </tr>
+          <tr>
+            <td><code>types</code></td>
+            <td>string</td>
+            <td><code>bug,feature,question</code></td>
+            <td>Comma-separated list of feedback types to show. Available: <code>bug</code>, <code>feature</code>, <code>question</code>, <code>ui</code>, <code>docs</code>, <code>performance</code>.</td>
+          </tr>
+          <tr>
+            <td><code>border-color</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Border color on the trigger element.</td>
+          </tr>
+          <tr>
+            <td><code>border-width</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Border width in pixels on the trigger element.</td>
+          </tr>
+          <tr>
+            <td><code>border-radius</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Border radius in pixels on the trigger element (overrides default).</td>
+          </tr>
+          <tr>
+            <td><code>popup-color</code></td>
+            <td>string</td>
+            <td><code>#238636</code></td>
+            <td>Accent color used inside the popup (e.g. submit button). Defaults to the primary <code>color</code>.</td>
+          </tr>
+          <tr>
+            <td><code>no-type-icons</code></td>
+            <td>boolean</td>
+            <td>--</td>
+            <td>When present, hides the emoji icons next to feedback type names in the popup.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="proxy-setup">
+      <h2>Proxy Setup (Recommended)</h2>
+      <p>The proxy keeps your GitHub token on the server. Users never see it.</p>
+
+      <h3>1. Prerequisites</h3>
+      <ul>
+        <li><a href="https://nodejs.org/">Node.js</a> 18+ and npm</li>
+        <li>A <a href="https://dash.cloudflare.com/sign-up">Cloudflare account</a> (free tier works)</li>
+      </ul>
+
+      <h3>2. Create the worker</h3>
+      <p>Copy the <code>worker/</code> directory from this repo into your project, or start fresh:</p>
+      <pre><code>mkdir gh-feedback-worker && cd gh-feedback-worker
+cp -r /path/to/gh-feedback/worker/* .
+npm init -y</code></pre>
+
+      <h3>3. Set your GitHub token</h3>
+      <p>Create a <strong>fine-grained</strong> Personal Access Token:</p>
+      <ol>
+        <li>Go to <a href="https://github.com/settings/tokens?type=beta">github.com/settings/tokens</a></li>
+        <li>Click <strong>Generate new token</strong></li>
+        <li>Name it something descriptive, e.g., <code>gh-feedback-proxy</code></li>
+        <li>Under <strong>Repository access</strong>, select <strong>Only select repositories</strong> and choose the repo</li>
+        <li>Under <strong>Permissions &gt; Repository permissions</strong>, set <strong>Issues</strong> to <strong>Read and Write</strong></li>
+        <li>Click <strong>Generate token</strong> and copy it</li>
+      </ol>
+      <p>Then store it as a Wrangler secret:</p>
+      <pre><code>npx wrangler secret put GITHUB_TOKEN
+# Paste the token when prompted</code></pre>
+
+      <h3>4. Configure the worker</h3>
+      <p>Open <code>worker/wrangler.toml</code> and set these two values:</p>
+      <ul>
+        <li><strong><code>GITHUB_REPO</code></strong> — change <code>"owner/repo"</code> to your GitHub repository (e.g., <code>"acme/webapp"</code>)</li>
+        <li><strong><code>ALLOWED_ORIGINS</code></strong> — change <code>"*"</code> to your website's URL (e.g., <code>"https://your-site.com"</code>). During development, include localhost too: <code>"https://your-site.com,http://localhost:3000"</code>. The default <code>*</code> allows any site — restrict before going live</li>
+      </ul>
+
+      <h3>5. Deploy</h3>
+      <pre><code>cd worker
+npx wrangler deploy</code></pre>
+      <p>Wrangler prints the worker URL, e.g., <code>https://gh-feedback-proxy.your-account.workers.dev</code>.</p>
+
+      <h3>6. Use it</h3>
+      <pre><code>&lt;gh-feedback repo="https://github.com/you/repo" endpoint="https://gh-feedback-proxy.your-account.workers.dev/feedback"&gt;&lt;/gh-feedback&gt;</code></pre>
+
+      <h3>7. Verify</h3>
+      <pre><code>curl -X POST https://gh-feedback-proxy.your-account.workers.dev/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test issue from curl", "type": "bug"}'</code></pre>
+      <p>You should get back <code>{"issueNumber": ..., "issueUrl": "..."}</code> and see the issue in your GitHub repo.</p>
+      <p><strong>Multi-repo note:</strong> The worker always files issues to the repo configured in <code>GITHUB_REPO</code>. To file to multiple repos, deploy one worker per repo.</p>
+    </section>
+
+    <section id="alternative-backends">
+      <h2>Alternative Backends</h2>
+      <p>The component POSTs JSON to any URL. The <code>worker/</code> template is for Cloudflare Workers, but any backend works. The contract:</p>
+      <pre><code>POST { title, type, severity?, description, labels?, repo?, context? }
+--> 201 { issueNumber, issueUrl }
+--> 4xx/5xx { error: "message" }</code></pre>
+      <p>Your backend receives this JSON, creates a GitHub Issue using a server-side token, and returns the result. The key requirement is that the endpoint holds the GitHub token server-side -- it never reaches the browser.</p>
+      <p>Any of these work:</p>
+      <ul>
+        <li><strong>Vercel Functions</strong> -- <code>api/feedback.js</code> with <code>GITHUB_TOKEN</code> env var</li>
+        <li><strong>Netlify Functions</strong> -- <code>netlify/functions/feedback.js</code></li>
+        <li><strong>AWS Lambda</strong> -- behind API Gateway</li>
+        <li><strong>Deno Deploy</strong> -- single <code>main.ts</code> file</li>
+        <li><strong>Express / Flask / Rails</strong> -- any traditional server</li>
+        <li><strong>Any serverless platform</strong> -- anything that can receive a POST and call the GitHub API</li>
+      </ul>
+      <p>The Cloudflare Worker in <code>worker/</code> is a good reference implementation (~80 lines). Adapt it to your platform.</p>
+    </section>
+
+    <section id="direct-mode">
+      <h2>Direct Mode</h2>
+      <p>If you don't want to set up a proxy, you can pass a GitHub token directly:</p>
+      <pre><code>&lt;gh-feedback repo="https://github.com/you/repo" token="ghp_yourTokenHere"&gt;&lt;/gh-feedback&gt;</code></pre>
+      <div class="warning">
+        <strong>Warning:</strong> The token is visible in your page source and browser DevTools. Anyone who views your page can extract it. <strong>Only use direct mode for internal tools, localhost development, or pages behind authentication.</strong> For public sites, use proxy mode.
+      </div>
+    </section>
+
+    <section id="events">
+      <h2>Events</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Detail</th>
+            <th>Cancelable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>gh-feedback:submit</code></td>
+            <td><code>{ title, type, description, labels, repo, severity? }</code></td>
+            <td>Yes</td>
+            <td>Fires before submission. Call <code>preventDefault()</code> to cancel.</td>
+          </tr>
+          <tr>
+            <td><code>gh-feedback:filed</code></td>
+            <td><code>{ issueNumber, issueUrl }</code></td>
+            <td>No</td>
+            <td>Fires after issue is successfully created.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Listener example</h3>
+      <pre><code>document.querySelector('gh-feedback')
+  .addEventListener('gh-feedback:filed', (e) => {
+    console.log(`Issue #${e.detail.issueNumber}: ${e.detail.issueUrl}`);
+  });</code></pre>
+    </section>
+
+    <section id="context-capture">
+      <h2>Context Capture</h2>
+      <p>Set the <code>getContext</code> property to a function that returns an object. The data is attached to the issue body in a collapsible details section.</p>
+      <pre><code>const fb = document.querySelector('gh-feedback');
+fb.getContext = () => ({
+  url: location.href,
+  viewport: `${innerWidth}x${innerHeight}`,
+  userAgent: navigator.userAgent,
+  timestamp: new Date().toISOString()
+});</code></pre>
+    </section>
+
+    <section id="theming">
+      <h2>Theming</h2>
+      <p>For fine-grained control beyond the <code>color</code> attribute, override CSS custom properties on the <code>gh-feedback</code> element:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Light Default</th>
+            <th>Dark Default</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>--gh-feedback-primary</code></td><td><code>#238636</code></td><td><code>#238636</code></td></tr>
+          <tr><td><code>--gh-feedback-primary-hover</code></td><td><code>#2ea043</code></td><td><code>#2ea043</code></td></tr>
+          <tr><td><code>--gh-feedback-bg</code></td><td><code>#ffffff</code></td><td><code>#1c2128</code></td></tr>
+          <tr><td><code>--gh-feedback-text</code></td><td><code>#1f2328</code></td><td><code>#e6edf3</code></td></tr>
+          <tr><td><code>--gh-feedback-border</code></td><td><code>#d1d9e0</code></td><td><code>#444c56</code></td></tr>
+          <tr><td><code>--gh-feedback-input-bg</code></td><td><code>#f6f8fa</code></td><td><code>#22272e</code></td></tr>
+          <tr><td><code>--gh-feedback-error</code></td><td><code>#d1242f</code></td><td><code>#d1242f</code></td></tr>
+          <tr><td><code>--gh-feedback-success</code></td><td><code>#238636</code></td><td><code>#238636</code></td></tr>
+          <tr><td><code>--gh-feedback-fab-bg</code></td><td>(primary)</td><td>(primary)</td></tr>
+          <tr><td><code>--gh-feedback-fab-text</code></td><td><code>#ffffff</code></td><td><code>#ffffff</code></td></tr>
+        </tbody>
+      </table>
+      <pre><code>&lt;style&gt;
+  gh-feedback {
+    --gh-feedback-primary: #6f42c1;
+    --gh-feedback-primary-hover: #8250df;
+  }
+&lt;/style&gt;
+&lt;gh-feedback repo="https://github.com/you/repo" endpoint="..." theme="dark"&gt;&lt;/gh-feedback&gt;</code></pre>
+    </section>
+
+    <section id="security-csp">
+      <h2>Security &amp; CSP</h2>
+      <p><strong>Proxy mode</strong> (recommended): Your GitHub token stays on the server. The browser only communicates with your worker endpoint.</p>
+      <p><strong>Direct mode</strong>: The token is in the HTML source. Only for internal tools or pages behind auth.</p>
+      <p>If your site uses a strict Content Security Policy, add the proxy endpoint to <code>connect-src</code>:</p>
+      <pre><code>Content-Security-Policy: connect-src 'self' https://your-worker.workers.dev;</code></pre>
+      <p>Shadow DOM <code>&lt;style&gt;</code> elements are CSP-exempt in modern browsers, so no <code>style-src</code> changes are needed.</p>
+    </section>
+
+    <section id="development">
+      <h2>Development</h2>
+      <p>Run the unit tests (worker):</p>
+      <pre><code>npm install
+npm test</code></pre>
+      <p>Run the Playwright E2E tests:</p>
+      <pre><code>npx playwright install --with-deps chromium
+npx playwright test</code></pre>
+      <p>Run all tests:</p>
+      <pre><code>npm run test:all</code></pre>
+    </section>
+
+    <section id="license">
+      <h2>License</h2>
+      <p><a href="./LICENSE">MIT</a> -- use it anywhere.</p>
+    </section>
+
+    <footer>
+      <p><a href="https://github.com/zeveck/gh-feedback">GitHub</a> &middot; MIT License</p>
+    </footer>
+
+  </div>
+
+  <!-- Live component -->
+  <script type="module" src="./gh-feedback.js"></script>
+  <gh-feedback id="demo-component" repo="zeveck/gh-feedback" endpoint="/feedback" trigger="button" show-severity></gh-feedback>
+
+  <script type="module">
+    const el = document.getElementById('demo-component');
+    const logEl = document.getElementById('demo-log');
+    const codeEl = document.getElementById('code-snippet');
+    const copyBtn = document.getElementById('copy-btn');
+    const previewCard = document.getElementById('preview-card');
+    const positionSelect = document.getElementById('ctrl-position');
+    const colorInput = document.getElementById('ctrl-color');
+    const buttonTextInput = document.getElementById('ctrl-button-text');
+    const severityCheck = document.getElementById('ctrl-severity');
+    const typeIconsCheck = document.getElementById('ctrl-type-icons');
+    const typeChecks = document.getElementById('type-checks');
+    const sizePxInput = document.getElementById('ctrl-size-px');
+    const popupColorInput = document.getElementById('ctrl-popup-color');
+    const borderColorInput = document.getElementById('ctrl-border-color');
+    const borderWidthInput = document.getElementById('ctrl-border-width');
+    const borderRadiusInput = document.getElementById('ctrl-border-radius');
+
+    // State
+    const state = {
+      trigger: 'button',
+      icon: 'memo',
+      size: 'md',
+      sizePx: '',
+      theme: 'light',
+      position: 'bottom-right',
+      color: '#238636',
+      buttonText: '',
+      showSeverity: true,
+      popupColor: '#238636',
+      typeIcons: true,
+      types: ['bug', 'feature', 'question'],
+      borderColor: '',
+      borderWidth: '',
+      borderRadius: ''
+    };
+
+    // Move the component into the preview card so FAB positioning is relative to it
+    previewCard.style.position = 'relative';
+    previewCard.appendChild(el);
+
+    // Pill button groups
+    document.querySelectorAll('.control-row').forEach(row => {
+      const group = row.dataset.group;
+      row.querySelectorAll('.pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          row.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state[group] = btn.dataset.value;
+          // Show implied px when a size pill is clicked
+          if (group === 'size') {
+            const sizeMap = { sm: 36, md: 48, lg: 56 };
+            state.sizePx = '';
+            sizePxInput.value = sizeMap[btn.dataset.value] || '';
+            sizePxInput.placeholder = sizeMap[btn.dataset.value] || 'px';
+          }
+          updateComponent();
+        });
+      });
+    });
+
+    positionSelect.addEventListener('change', () => {
+      state.position = positionSelect.value;
+      updateComponent();
+    });
+
+    colorInput.addEventListener('input', () => {
+      state.color = colorInput.value;
+      updateComponent();
+    });
+
+    buttonTextInput.addEventListener('input', () => {
+      state.buttonText = buttonTextInput.value;
+      updateComponent();
+    });
+
+    severityCheck.addEventListener('change', () => {
+      state.showSeverity = severityCheck.checked;
+      updateComponent();
+    });
+
+    popupColorInput.addEventListener('input', () => {
+      state.popupColor = popupColorInput.value;
+      updateComponent();
+    });
+
+    typeIconsCheck.addEventListener('change', () => {
+      state.typeIcons = typeIconsCheck.checked;
+      updateComponent();
+    });
+
+    typeChecks.addEventListener('change', () => {
+      state.types = [...typeChecks.querySelectorAll('input:checked')].map(cb => cb.dataset.type);
+      if (state.types.length === 0) state.types = ['bug']; // need at least one
+      updateComponent();
+    });
+
+    sizePxInput.addEventListener('input', () => {
+      state.sizePx = sizePxInput.value;
+      // Clear active pill selection when custom px is set
+      if (state.sizePx) {
+        document.querySelectorAll('[data-group="size"] .pill-btn').forEach(b => b.classList.remove('active'));
+      }
+      updateComponent();
+    });
+
+    borderWidthInput.addEventListener('input', () => {
+      state.borderWidth = borderWidthInput.value;
+      updateComponent();
+    });
+
+    borderRadiusInput.addEventListener('input', () => {
+      state.borderRadius = borderRadiusInput.value;
+      updateComponent();
+    });
+
+    borderColorInput.addEventListener('input', () => {
+      state.borderColor = borderColorInput.value;
+      updateComponent();
+    });
+
+    // Enable/disable position select based on trigger type
+    function updatePositionEnabled() {
+      positionSelect.disabled = state.trigger !== 'fab';
+    }
+
+    function updateComponent() {
+      updatePositionEnabled();
+
+      // Update attributes on the live component
+      el.setAttribute('trigger', state.trigger);
+      el.setAttribute('position', state.position);
+
+      // Icon attribute (default is memo, omit if memo)
+      if (state.icon !== 'memo') {
+        el.setAttribute('icon', state.icon);
+      } else {
+        el.removeAttribute('icon');
+      }
+
+      // Size attribute — custom px overrides pill selection
+      const effectiveSize = state.sizePx || state.size;
+      if (effectiveSize !== 'md') {
+        el.setAttribute('size', effectiveSize);
+      } else {
+        el.removeAttribute('size');
+      }
+
+      // Color attribute (default is #238636, omit if default)
+      if (state.color !== '#238636') {
+        el.setAttribute('color', state.color);
+      } else {
+        el.removeAttribute('color');
+      }
+
+      // Theme
+      if (state.theme !== 'light') {
+        el.setAttribute('theme', state.theme);
+      } else {
+        el.removeAttribute('theme');
+      }
+
+      // Position (only meaningful for FAB, but always set it)
+      if (state.position !== 'bottom-right') {
+        el.setAttribute('position', state.position);
+      } else {
+        el.removeAttribute('position');
+      }
+
+      // Button text
+      if (state.buttonText) {
+        el.setAttribute('button-text', state.buttonText);
+      } else {
+        el.removeAttribute('button-text');
+      }
+
+      // Show severity
+      if (state.showSeverity) {
+        el.setAttribute('show-severity', '');
+      } else {
+        el.removeAttribute('show-severity');
+      }
+
+      // Popup color
+      if (state.popupColor !== '#238636') {
+        el.setAttribute('popup-color', state.popupColor);
+      } else {
+        el.removeAttribute('popup-color');
+      }
+
+      // Type icons
+      if (!state.typeIcons) {
+        el.setAttribute('no-type-icons', '');
+      } else {
+        el.removeAttribute('no-type-icons');
+      }
+
+      // Types
+      const defaultTypes = ['bug', 'feature', 'question'];
+      const typesStr = state.types.join(',');
+      if (typesStr !== defaultTypes.join(',')) {
+        el.setAttribute('types', typesStr);
+      } else {
+        el.removeAttribute('types');
+      }
+
+      // Border attributes
+      if (state.borderWidth) {
+        el.setAttribute('border-color', state.borderColor || '#666666');
+        el.setAttribute('border-width', state.borderWidth);
+      } else {
+        el.removeAttribute('border-color');
+        el.removeAttribute('border-width');
+      }
+      if (state.borderRadius) {
+        el.setAttribute('border-radius', state.borderRadius);
+      } else {
+        el.removeAttribute('border-radius');
+      }
+
+      // Update hint text based on trigger type
+      const hint = document.getElementById('preview-hint');
+      if (state.trigger === 'fab') {
+        const arrows = { 'bottom-right': '↘', 'bottom-left': '↙', 'top-right': '↗', 'top-left': '↖' };
+        hint.textContent = `Look for the feedback button in the ${state.position.replace('-', '-')} corner of the page ${arrows[state.position] || '↘'}`;
+        hint.style.display = '';
+      } else {
+        hint.style.display = 'none';
+      }
+
+      updateCodeSnippet();
+    }
+
+    function updateCodeSnippet() {
+      const attrs = [];
+      attrs.push('repo="https://github.com/you/repo"');
+      attrs.push('endpoint="https://your-worker.workers.dev/feedback"');
+
+      if (state.trigger !== 'fab') attrs.push(`trigger="${state.trigger}"`);
+      if (state.icon !== 'memo') attrs.push(`icon="${state.icon}"`);
+      const effectiveSize = state.sizePx || state.size;
+      if (effectiveSize !== 'md') attrs.push(`size="${effectiveSize}"`);
+      if (state.color !== '#238636') attrs.push(`color="${state.color}"`);
+      if (state.theme !== 'light') attrs.push(`theme="${state.theme}"`);
+      if (state.trigger === 'fab' && state.position !== 'bottom-right') attrs.push(`position="${state.position}"`);
+      if (state.buttonText) attrs.push(`button-text="${escHtml(state.buttonText)}"`);
+      if (state.popupColor !== '#238636') attrs.push(`popup-color="${state.popupColor}"`);
+      if (state.showSeverity) attrs.push('show-severity');
+      if (!state.typeIcons) attrs.push('no-type-icons');
+      const defaultTypes = ['bug', 'feature', 'question'];
+      if (state.types.join(',') !== defaultTypes.join(',')) attrs.push(`types="${state.types.join(',')}"`);
+      if (state.borderWidth) {
+        attrs.push(`border-color="${state.borderColor || '#666666'}"`);
+        attrs.push(`border-width="${state.borderWidth}"`);
+      }
+      if (state.borderRadius) attrs.push(`border-radius="${state.borderRadius}"`);
+
+      let tag;
+      if (attrs.length <= 3) {
+        tag = `<gh-feedback ${attrs.join(' ')}></gh-feedback>`;
+      } else {
+        tag = `<gh-feedback\n  ${attrs.join('\n  ')}\n></gh-feedback>`;
+      }
+
+      const snippet = `<script type="module" src="gh-feedback.js"><\/script>\n${tag}`;
+      codeEl.textContent = snippet;
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Copy button
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(codeEl.textContent);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      } catch {
+        copyBtn.textContent = 'Failed';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      }
+    });
+
+    // Intercept submission (demo mode)
+    el.addEventListener('gh-feedback:submit', (e) => {
+      e.preventDefault();
+      const { title, type } = e.detail;
+      logEl.textContent = `Intercepted: "${title}" (${type}) -- no issue filed (demo mode)`;
+
+      setTimeout(() => {
+        const fakeNumber = Math.floor(Math.random() * 900) + 100;
+        el.dispatchEvent(new CustomEvent('gh-feedback:filed', {
+          detail: {
+            issueNumber: fakeNumber,
+            issueUrl: `https://github.com/zeveck/gh-feedback/issues/${fakeNumber}`
+          }
+        }));
+        logEl.textContent = `Demo: simulated Issue #${fakeNumber} filed successfully`;
+      }, 500);
+    });
+
+    // Initial render
+    updateComponent();
+  </script>
+
+</body>
+</html>
