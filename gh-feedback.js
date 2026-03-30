@@ -398,7 +398,7 @@ function esc(str) {
 
 class GhFeedback extends HTMLElement {
   static get observedAttributes() {
-    return ['repo', 'endpoint', 'token', 'position', 'theme', 'labels', 'button-text', 'trigger', 'show-severity', 'no-type-icons', 'icon', 'size', 'color', 'popup-color', 'types', 'border-color', 'border-width', 'border-radius'];
+    return ['repo', 'endpoint', 'token', 'position', 'theme', 'labels', 'button-text', 'trigger', 'no-severity', 'no-type-icons', 'icon', 'size', 'color', 'popup-color', 'types', 'border-color', 'border-width', 'border-radius'];
   }
 
   constructor() {
@@ -517,8 +517,8 @@ class GhFeedback extends HTMLElement {
 
   _getTriggerType() {
     const t = this.getAttribute('trigger');
-    if (t === 'button' || t === 'link' || t === 'none') return t;
-    return 'fab';
+    if (t === 'fab' || t === 'link' || t === 'none') return t;
+    return 'button';
   }
 
   /**
@@ -556,7 +556,7 @@ class GhFeedback extends HTMLElement {
     const pos = this._getPosition();
     const buttonText = this.getAttribute('button-text');
     const triggerType = this._getTriggerType();
-    const showSeverity = this.hasAttribute('show-severity');
+    const showSeverity = !this.hasAttribute('no-severity');
     const text = buttonText || '';
     const iconName = this._getIcon();
     const size = this._getSize();
@@ -963,7 +963,7 @@ class GhFeedback extends HTMLElement {
 
     // Build detail object
     const detail = { title, type: this._type, description, labels: this._getLabels(), repo };
-    if (this.hasAttribute('show-severity')) detail.severity = this._severity;
+    if (!this.hasAttribute('no-severity')) detail.severity = this._severity;
 
     // Dispatch cancelable submit event
     const submitEvent = new CustomEvent('gh-feedback:submit', {
@@ -984,8 +984,8 @@ class GhFeedback extends HTMLElement {
       labels: this._getLabels()
     };
 
-    // Add severity if show-severity attribute is present
-    if (this.hasAttribute('show-severity')) {
+    // Add severity unless no-severity attribute is present
+    if (!this.hasAttribute('no-severity')) {
       payload.severity = this._severity;
     }
 

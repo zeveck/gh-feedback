@@ -37,7 +37,7 @@ The component needs a backend to securely file GitHub Issues (so your token stay
 | `repo` | `string` | — | GitHub repository — either `owner/repo` or a full URL like `https://github.com/owner/repo` (both are normalized). Required. |
 | `endpoint` | `string` | — | URL of the proxy endpoint (recommended). Component POSTs JSON here. |
 | `token` | `string` | — | GitHub PAT for direct mode. **Warning:** exposed in page source. Use proxy mode in production. |
-| `trigger` | `string` | `fab` | Trigger style: `fab` (floating action button), `button` (inline), `link` (text link), or `none` (hidden — use `open()`/`toggle()` from your own UI). |
+| `trigger` | `string` | `button` | Trigger style: `button` (inline), `fab` (floating action button), `link` (text link), or `none` (hidden — use `open()`/`toggle()` from your own UI). |
 | `icon` | `string` | `memo` | Icon: `chat`, `bug`, `megaphone`, `lightbulb`, `pencil`, `flag`, `memo`, or `none`. |
 | `size` | `string` | `md` | Size: `sm`, `md`, `lg`, or a number for pixel size (e.g. `40`). |
 | `color` | `string` | `#238636` | Primary color (hex). Sets the FAB, button, and accent color. |
@@ -45,7 +45,7 @@ The component needs a backend to securely file GitHub Issues (so your token stay
 | `theme` | `string` | `light` | Popup color theme: `light` or `dark`. |
 | `labels` | `string` | — | Comma-separated labels added to every issue (e.g., `"feedback,user-reported"`). Merged with the type-derived label. |
 | `button-text` | `string` | — | Text shown on the trigger. For FAB, makes it pill-shaped. |
-| `show-severity` | boolean | — | When present, shows a severity selector (Low / Medium / High / Critical) for bug reports. |
+| `no-severity` | boolean | — | When present, hides the severity selector. Severity (Low / Medium / High / Critical) is shown by default for bug reports. |
 | `border-color` | `string` | — | Border color on the trigger element. |
 | `border-width` | `string` | — | Border width in pixels on the trigger element. |
 | `border-radius` | `string` | — | Border radius in pixels on the trigger element (overrides default). |

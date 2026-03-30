@@ -506,10 +506,10 @@
             <td>Text shown on the trigger. For FAB, makes it pill-shaped.</td>
           </tr>
           <tr>
-            <td><code>show-severity</code></td>
+            <td><code>no-severity</code></td>
             <td>boolean</td>
             <td>--</td>
-            <td>When present, shows a severity selector (Low / Medium / High / Critical) for bug reports.</td>
+            <td>When present, hides the severity selector. Severity (Low / Medium / High / Critical) is shown by default for bug reports.</td>
           </tr>
           <tr>
             <td><code>types</code></td>
@@ -745,7 +745,7 @@ npx playwright test</code></pre>
 
   <!-- Live component -->
   <script type="module" src="./gh-feedback.js"></script>
-  <gh-feedback id="demo-component" repo="zeveck/gh-feedback" endpoint="/feedback" trigger="button" show-severity></gh-feedback>
+  <gh-feedback id="demo-component" repo="zeveck/gh-feedback" endpoint="/feedback"></gh-feedback>
 
   <script type="module">
     const el = document.getElementById('demo-component');
@@ -923,11 +923,11 @@ npx playwright test</code></pre>
         el.removeAttribute('button-text');
       }
 
-      // Show severity
-      if (state.showSeverity) {
-        el.setAttribute('show-severity', '');
+      // Severity (on by default, no-severity hides it)
+      if (!state.showSeverity) {
+        el.setAttribute('no-severity', '');
       } else {
-        el.removeAttribute('show-severity');
+        el.removeAttribute('no-severity');
       }
 
       // Popup color
@@ -985,7 +985,7 @@ npx playwright test</code></pre>
       attrs.push('repo="https://github.com/you/repo"');
       attrs.push('endpoint="https://your-worker.workers.dev/feedback"');
 
-      if (state.trigger !== 'fab') attrs.push(`trigger="${state.trigger}"`);
+      if (state.trigger !== 'button') attrs.push(`trigger="${state.trigger}"`);
       if (state.icon !== 'memo') attrs.push(`icon="${state.icon}"`);
       const effectiveSize = state.sizePx || state.size;
       if (effectiveSize !== 'md') attrs.push(`size="${effectiveSize}"`);
@@ -994,7 +994,7 @@ npx playwright test</code></pre>
       if (state.trigger === 'fab' && state.position !== 'bottom-right') attrs.push(`position="${state.position}"`);
       if (state.buttonText) attrs.push(`button-text="${escHtml(state.buttonText)}"`);
       if (state.popupColor !== '#238636') attrs.push(`popup-color="${state.popupColor}"`);
-      if (state.showSeverity) attrs.push('show-severity');
+      if (!state.showSeverity) attrs.push('no-severity');
       if (!state.typeIcons) attrs.push('no-type-icons');
       const defaultTypes = ['bug', 'feature', 'question'];
       if (state.types.join(',') !== defaultTypes.join(',')) attrs.push(`types="${state.types.join(',')}"`);
