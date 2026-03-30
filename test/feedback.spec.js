@@ -815,8 +815,8 @@ test.describe('gh-feedback E2E', () => {
 
   // ---- Severity field ----
 
-  // 32. show-severity shows severity pills when type is bug
-  test('show-severity shows severity pills when type is bug', async ({ page }) => {
+  // 32. severity pills shown by default when type is bug
+  test('severity pills shown by default when type is bug', async ({ page }) => {
     await shadowClick(page, 'gh-feedback#with-severity', '.fab');
     await page.waitForFunction(() =>
       document.querySelector('gh-feedback#with-severity').shadowRoot.querySelector('.popup')?.classList.contains('open')
@@ -904,8 +904,8 @@ test.describe('gh-feedback E2E', () => {
     expect(capturedBody.type).toBe('bug');
   });
 
-  // 36. severity omitted when show-severity attribute not present
-  test('severity omitted when show-severity not present', async ({ page }) => {
+  // 36. severity omitted when no-severity attribute is present
+  test('severity omitted when no-severity present', async ({ page }) => {
     let capturedBody = null;
     await page.route('**/feedback', async route => {
       capturedBody = JSON.parse(route.request().postData());
@@ -916,11 +916,11 @@ test.describe('gh-feedback E2E', () => {
       });
     });
 
-    await openAndFillTitle(page, 'default', 'No severity test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'no-severity', 'No severity test');
+    await shadowClick(page, 'gh-feedback#no-severity', '.submit-btn');
 
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#no-severity').shadowRoot;
       return sr.querySelector('.success-msg')?.style.display === 'block';
     }, { timeout: 5000 });
 
@@ -1115,8 +1115,8 @@ test.describe('gh-feedback E2E', () => {
     expect(svgCount).toBe(0);
   });
 
-  // 49. show-severity shows severity pills for bug type (using existing fixture)
-  test('show-severity shows severity pills for bug type', async ({ page }) => {
+  // 49. severity shown by default for bug type (using existing fixture)
+  test('severity shown by default for bug type', async ({ page }) => {
     await shadowClick(page, 'gh-feedback#with-severity', '.fab');
     await page.waitForFunction(() =>
       document.querySelector('gh-feedback#with-severity').shadowRoot.querySelector('.popup')?.classList.contains('open')
