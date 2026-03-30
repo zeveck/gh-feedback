@@ -96,7 +96,7 @@ test.describe('gh-feedback E2E', () => {
   // 1. FAB renders in bottom-right by default
   test('FAB renders in bottom-right by default', async ({ page }) => {
     const box = await page.evaluate(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       const fab = el.shadowRoot.querySelector('.fab');
       return fab.getBoundingClientRect().toJSON();
     });
@@ -106,7 +106,7 @@ test.describe('gh-feedback E2E', () => {
     expect(box.bottom).toBeGreaterThan(viewport.height - 80);
     // Verify the SVG icon is present
     const hasSvg = await page.evaluate(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       return !!el.shadowRoot.querySelector('.fab svg');
     });
     expect(hasSvg).toBe(true);
@@ -119,7 +119,7 @@ test.describe('gh-feedback E2E', () => {
       { id: 'top-left', check: (b) => b.left < 80 && b.top < 80 },
       { id: 'top-right', check: (b) => b.right > viewport.width - 80 && b.top < 80 },
       { id: 'bottom-left', check: (b) => b.left < 80 && b.bottom > viewport.height - 80 },
-      { id: 'default', check: (b) => b.right > viewport.width - 80 && b.bottom > viewport.height - 80 },
+      { id: 'fab-default', check: (b) => b.right > viewport.width - 80 && b.bottom > viewport.height - 80 },
     ];
     for (const { id, check } of positions) {
       const box = await page.evaluate(
@@ -148,13 +148,13 @@ test.describe('gh-feedback E2E', () => {
 
   // 4. Click FAB opens popup
   test('Click FAB opens popup', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       return el.shadowRoot.querySelector('.popup')?.classList.contains('open');
     });
     const hasElements = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return {
         title: !!sr.querySelector('#ghf-title'),
         desc: !!sr.querySelector('#ghf-desc'),
@@ -170,29 +170,29 @@ test.describe('gh-feedback E2E', () => {
 
   // 5. X button closes popup
   test('X button closes popup', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
-    await shadowClick(page, 'gh-feedback#default', '.close-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.close-btn');
     await page.waitForFunction(() =>
-      !document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
   });
 
   // 6. Escape closes popup
   test('Escape closes popup', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     await page.keyboard.press('Escape');
     await page.waitForFunction(() =>
-      !document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     // Verify FAB is focused
     const fabFocused = await page.evaluate(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       return el.shadowRoot.activeElement === el.shadowRoot.querySelector('.fab');
     });
     expect(fabFocused).toBe(true);
@@ -200,28 +200,28 @@ test.describe('gh-feedback E2E', () => {
 
   // 7. Backdrop click closes popup
   test('Backdrop click closes popup', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
-    await shadowClick(page, 'gh-feedback#default', '.backdrop');
+    await shadowClick(page, 'gh-feedback#fab-default', '.backdrop');
     await page.waitForFunction(() =>
-      !document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
   });
 
   // 8. Focus returns to FAB after close
   test('Focus returns to FAB after close', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
-    await shadowClick(page, 'gh-feedback#default', '.close-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.close-btn');
     await page.waitForFunction(() =>
-      !document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     const fabFocused = await page.evaluate(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       return el.shadowRoot.activeElement === el.shadowRoot.querySelector('.fab');
     });
     expect(fabFocused).toBe(true);
@@ -229,19 +229,19 @@ test.describe('gh-feedback E2E', () => {
 
   // 9. Focus trap — Tab wraps last-to-first
   test('Focus trap — Tab wraps last-to-first', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     // Focus the submit button (last focusable in form view)
     await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       sr.querySelector('.submit-btn').focus();
     });
     // Tab should wrap to first focusable element (close button)
     await page.keyboard.press('Tab');
     const activeTag = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       const active = sr.activeElement;
       return active?.className || active?.tagName;
     });
@@ -251,19 +251,19 @@ test.describe('gh-feedback E2E', () => {
 
   // 10. Focus trap — Shift+Tab wraps first-to-last
   test('Focus trap — Shift+Tab wraps first-to-last', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     // Focus the close button (first focusable in popup)
     await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       sr.querySelector('.close-btn').focus();
     });
     // Shift+Tab should wrap to last focusable (submit button)
     await page.keyboard.press('Shift+Tab');
     const activeTag = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.activeElement?.className || '';
     });
     expect(activeTag).toContain('submit-btn');
@@ -279,18 +279,18 @@ test.describe('gh-feedback E2E', () => {
     // Actually, Tab from body should eventually reach a FAB.
     // Let's focus the first gh-feedback's FAB directly, then use only keyboard.
     await page.evaluate(() => {
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.fab').focus();
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.fab').focus();
     });
 
     // Enter to open
     await page.keyboard.press('Enter');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
 
     // Title input should be focused after a short delay
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.activeElement?.id === 'ghf-title';
     }, { timeout: 2000 });
 
@@ -307,7 +307,7 @@ test.describe('gh-feedback E2E', () => {
 
     // Verify we're on the submit button
     const onSubmit = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.activeElement?.classList.contains('submit-btn');
     });
     expect(onSubmit).toBe(true);
@@ -317,11 +317,11 @@ test.describe('gh-feedback E2E', () => {
 
     // Wait for success
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.success-msg')?.style.display === 'block';
     }, { timeout: 5000 });
 
-    const successText = await shadowText(page, 'gh-feedback#default', '.success-text');
+    const successText = await shadowText(page, 'gh-feedback#fab-default', '.success-text');
     expect(successText).toContain('#42');
   });
 
@@ -330,17 +330,17 @@ test.describe('gh-feedback E2E', () => {
     let requestMade = false;
     await page.route('**/feedback', () => { requestMade = true; });
 
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     // Click submit without filling title
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
-    const errorText = await shadowText(page, 'gh-feedback#default', '.error-msg');
+    const errorText = await shadowText(page, 'gh-feedback#fab-default', '.error-msg');
     expect(errorText).toContain('Title is required');
 
-    const errorVisible = await shadowVisible(page, 'gh-feedback#default', '.error-msg');
+    const errorVisible = await shadowVisible(page, 'gh-feedback#fab-default', '.error-msg');
     expect(errorVisible).toBe(true);
 
     expect(requestMade).toBe(false);
@@ -362,23 +362,23 @@ test.describe('gh-feedback E2E', () => {
   // 14. Proxy mode submit — success (loading -> success -> auto-close)
   test('Proxy mode submit — success', async ({ page }) => {
     await mockProxySuccess(page);
-    await openAndFillTitle(page, 'default', 'Test bug');
+    await openAndFillTitle(page, 'fab-default', 'Test bug');
 
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for success state
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.success-msg')?.style.display === 'block';
     }, { timeout: 5000 });
 
-    const successText = await shadowText(page, 'gh-feedback#default', '.success-text');
+    const successText = await shadowText(page, 'gh-feedback#fab-default', '.success-text');
     expect(successText).toContain('Issue filed!');
     expect(successText).toContain('#42');
 
     // Verify auto-close after ~2s
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return !sr.querySelector('.popup')?.classList.contains('open');
     }, { timeout: 5000 });
   });
@@ -394,12 +394,12 @@ test.describe('gh-feedback E2E', () => {
       });
     });
 
-    await openAndFillTitle(page, 'default', 'Test loading');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Test loading');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Check loading state immediately
     const loadingState = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       const btn = sr.querySelector('.submit-btn');
       const titleInput = sr.querySelector('#ghf-title');
       return {
@@ -457,22 +457,22 @@ test.describe('gh-feedback E2E', () => {
       body: JSON.stringify({ error: 'Internal Server Error' }),
     }));
 
-    await openAndFillTitle(page, 'default', 'Error test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Error test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for error to appear
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       const err = sr.querySelector('.error-msg');
       return err?.classList.contains('visible');
     }, { timeout: 5000 });
 
-    const errorText = await shadowText(page, 'gh-feedback#default', '.error-msg');
+    const errorText = await shadowText(page, 'gh-feedback#fab-default', '.error-msg');
     expect(errorText).toContain('Server error');
 
     // Fields should be re-enabled
     const fieldsEnabled = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return !sr.querySelector('#ghf-title').disabled;
     });
     expect(fieldsEnabled).toBe(true);
@@ -486,37 +486,37 @@ test.describe('gh-feedback E2E', () => {
       body: '<html><body>404 Not Found</body></html>',
     }));
 
-    await openAndFillTitle(page, 'default', 'HTML response test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'HTML response test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.error-msg')?.classList.contains('visible');
     }, { timeout: 5000 });
 
-    const errorText = await shadowText(page, 'gh-feedback#default', '.error-msg');
+    const errorText = await shadowText(page, 'gh-feedback#fab-default', '.error-msg');
     expect(errorText).toContain('Unexpected response');
   });
 
   // 19. Error clears on field edit
   test('Error clears on field edit', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     // Trigger validation error
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
-    const errorBefore = await shadowVisible(page, 'gh-feedback#default', '.error-msg');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
+    const errorBefore = await shadowVisible(page, 'gh-feedback#fab-default', '.error-msg');
     expect(errorBefore).toBe(true);
 
     // Type in title field
-    await shadowFill(page, 'gh-feedback#default', '#ghf-title', 'Now has title');
+    await shadowFill(page, 'gh-feedback#fab-default', '#ghf-title', 'Now has title');
 
     // Error should be cleared — need to trigger input event
     // fill() dispatches input event, so the error should clear
     // Wait a moment for the event handler
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return !sr.querySelector('.error-msg')?.classList.contains('visible');
     }, { timeout: 2000 });
   });
@@ -544,13 +544,13 @@ test.describe('gh-feedback E2E', () => {
     await page.goto(FIXTURE);
     await page.waitForFunction(() => customElements.get('gh-feedback') !== undefined);
 
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
 
     const popupBox = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       const popup = sr.querySelector('.popup');
       return popup.getBoundingClientRect().toJSON();
     });
@@ -568,9 +568,9 @@ test.describe('gh-feedback E2E', () => {
   // 22. Multiple instances — one popup at a time
   test('Multiple instances — one popup at a time', async ({ page }) => {
     // Open first
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
 
     // Open second (dark)
@@ -581,7 +581,7 @@ test.describe('gh-feedback E2E', () => {
 
     // First should be closed
     const firstOpen = await page.evaluate(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
     expect(firstOpen).toBe(false);
 
@@ -604,8 +604,8 @@ test.describe('gh-feedback E2E', () => {
       });
     });
 
-    await openAndFillTitle(page, 'default', 'Event test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Event test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for filed event
     await page.waitForFunction(() => window._filedDetail !== null, { timeout: 5000 });
@@ -622,13 +622,13 @@ test.describe('gh-feedback E2E', () => {
 
     // Set up preventDefault listener
     await page.evaluate(() => {
-      document.querySelector('gh-feedback#default').addEventListener('gh-feedback:submit', (e) => {
+      document.querySelector('gh-feedback#fab-default').addEventListener('gh-feedback:submit', (e) => {
         e.preventDefault();
       });
     });
 
-    await openAndFillTitle(page, 'default', 'Canceled submit');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Canceled submit');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Give it a moment — if the request were going to fire, it would
     await page.waitForTimeout(500);
@@ -636,7 +636,7 @@ test.describe('gh-feedback E2E', () => {
 
     // Form should still be showing (not in loading or success state)
     const formVisible = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.form-view')?.style.display !== 'none';
     });
     expect(formVisible).toBe(true);
@@ -645,27 +645,27 @@ test.describe('gh-feedback E2E', () => {
   // 25. Success auto-dismiss and form reset
   test('Success auto-dismiss and form reset', async ({ page }) => {
     await mockProxySuccess(page);
-    await openAndFillTitle(page, 'default', 'Reset test');
+    await openAndFillTitle(page, 'fab-default', 'Reset test');
 
     // Select Feature type before submitting
-    await shadowClick(page, 'gh-feedback#default', '.type-pill[data-type="feature"]');
+    await shadowClick(page, 'gh-feedback#fab-default', '.type-pill[data-type="feature"]');
 
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for auto-close
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return !sr.querySelector('.popup')?.classList.contains('open');
     }, { timeout: 5000 });
 
     // Re-open and verify form is reset
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
 
     const formState = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return {
         title: sr.querySelector('#ghf-title').value,
         desc: sr.querySelector('#ghf-desc').value,
@@ -682,18 +682,18 @@ test.describe('gh-feedback E2E', () => {
   // 26. Rate limiting — submit disabled after success
   test('Rate limiting — submit disabled after success', async ({ page }) => {
     await mockProxySuccess(page);
-    await openAndFillTitle(page, 'default', 'Rate limit test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Rate limit test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for success
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.success-msg')?.style.display === 'block';
     }, { timeout: 5000 });
 
     // Submit button should be disabled (rate limited)
     const btnDisabled = await page.evaluate(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       return sr.querySelector('.submit-btn').disabled;
     });
     expect(btnDisabled).toBe(true);
@@ -1011,7 +1011,7 @@ test.describe('gh-feedback E2E', () => {
   // 42. Default icon is memo
   test('default icon is memo', async ({ page }) => {
     const pathD = await page.evaluate(() => {
-      const el = document.querySelector('gh-feedback#default');
+      const el = document.querySelector('gh-feedback#fab-default');
       const path = el.shadowRoot.querySelector('.fab svg path');
       return path?.getAttribute('d');
     });
@@ -1289,36 +1289,36 @@ test.describe('gh-feedback E2E', () => {
     // Abort all requests to the feedback endpoint to simulate network failure
     await page.route('**/feedback', route => route.abort('failed'));
 
-    await openAndFillTitle(page, 'default', 'Network error test');
-    await shadowClick(page, 'gh-feedback#default', '.submit-btn');
+    await openAndFillTitle(page, 'fab-default', 'Network error test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
 
     // Wait for error message to appear
     await page.waitForFunction(() => {
-      const sr = document.querySelector('gh-feedback#default').shadowRoot;
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
       const errEl = sr.querySelector('.error-msg');
       return errEl && errEl.classList.contains('visible') && errEl.textContent.length > 0;
     }, { timeout: 5000 });
 
-    const errorText = await shadowText(page, 'gh-feedback#default', '.error-msg');
+    const errorText = await shadowText(page, 'gh-feedback#fab-default', '.error-msg');
     // Should mention CORS or "reach the server"
     expect(errorText).toMatch(/CORS|reach the server/i);
   });
 
   // 59. Character count updates on description input
   test('character count updates on description input', async ({ page }) => {
-    await shadowClick(page, 'gh-feedback#default', '.fab');
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
     await page.waitForFunction(() =>
-      document.querySelector('gh-feedback#default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
 
     // Check initial count
-    const initialCount = await shadowText(page, 'gh-feedback#default', '.char-count');
+    const initialCount = await shadowText(page, 'gh-feedback#fab-default', '.char-count');
     expect(initialCount).toBe('0 / 2000');
 
     // Type some text into the description
-    await shadowFill(page, 'gh-feedback#default', '#ghf-desc', 'Hello world');
+    await shadowFill(page, 'gh-feedback#fab-default', '#ghf-desc', 'Hello world');
 
-    const updatedCount = await shadowText(page, 'gh-feedback#default', '.char-count');
+    const updatedCount = await shadowText(page, 'gh-feedback#fab-default', '.char-count');
     expect(updatedCount).toBe('11 / 2000');
   });
 
