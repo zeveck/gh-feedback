@@ -20,8 +20,8 @@ const ICONS = {
 };
 
 const TYPE_DEFS = {
-  bug: { label: 'Bug', icon: 'M20 8h-2.81a5.985 5.985 0 0 0-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5s-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z', ghLabel: 'bug' },
-  feature: { label: 'Feature', icon: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', ghLabel: 'enhancement' },
+  bug: { label: 'Bug', icon: ICONS.bug, ghLabel: 'bug' },
+  feature: { label: 'Feature', icon: ICONS.lightbulb, ghLabel: 'enhancement' },
   question: { label: 'Question', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z', ghLabel: 'question' },
   ui: { label: 'UI', icon: 'M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c.55 0 1-.45 1-1 0-.28-.11-.53-.29-.71-.18-.18-.29-.43-.29-.71 0-.55.45-1 1-1h1.67c3.68 0 6.67-2.99 6.67-6.67C22 5.92 17.51 2 12 2zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z', ghLabel: 'ui' },
   docs: { label: 'Docs', icon: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', ghLabel: 'documentation' },
@@ -411,7 +411,18 @@ class GhFeedback extends HTMLElement {
     this._autoCloseTimer = null;
     this._escapeHandler = null;
     this._focusTrapHandler = null;
+    this._pendingRender = false;
     this.getContext = null;
+    this._token = null;
+  }
+
+  /** Set token via JS property to avoid exposing it in the DOM. */
+  get token() {
+    return this._token ?? this.getAttribute('token');
+  }
+
+  set token(value) {
+    this._token = value;
   }
 
   connectedCallback() {
@@ -432,6 +443,7 @@ class GhFeedback extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
+    if (oldVal === newVal) return;
     if (name === 'repo' && newVal && !this._parseRepo()) {
       console.warn('gh-feedback: "repo" must be a GitHub repository URL or owner/repo format');
     }
@@ -442,8 +454,12 @@ class GhFeedback extends HTMLElement {
       this._applyPopupColor(newVal);
     }
     if (this.isConnected) {
-      this._render();
-      this._bindEvents();
+      if (this._isOpen) {
+        this._pendingRender = true;
+      } else {
+        this._render();
+        this._bindEvents();
+      }
     }
   }
 
@@ -479,7 +495,7 @@ class GhFeedback extends HTMLElement {
     const h = hex.replace('#', '');
     // Expand 3-digit shorthand: #fff → #ffffff
     const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-    if (!/^[0-9a-fA-F]{6}$/.test(full)) return hex; // Can't lighten non-hex, return as-is
+    if (!/^[0-9a-fA-F]{6}$/.test(full)) return `color-mix(in srgb, ${hex} 85%, white)`;
     const r = parseInt(full.substring(0, 2), 16);
     const g = parseInt(full.substring(2, 4), 16);
     const b = parseInt(full.substring(4, 6), 16);
@@ -553,6 +569,16 @@ class GhFeedback extends HTMLElement {
   }
 
   _render() {
+    // Clean up document-level listeners before replacing DOM
+    if (this._escapeHandler) {
+      document.removeEventListener('keydown', this._escapeHandler);
+      this._escapeHandler = null;
+    }
+    if (this._focusTrapHandler) {
+      this.shadowRoot.removeEventListener('keydown', this._focusTrapHandler);
+      this._focusTrapHandler = null;
+    }
+
     const pos = this._getPosition();
     const buttonText = this.getAttribute('button-text');
     const triggerType = this._getTriggerType();
@@ -588,7 +614,7 @@ class GhFeedback extends HTMLElement {
         parts.push(`border-width: ${bw}px`);
         parts.push('border-style: solid');
       }
-      if (br >= 0 && borderRadius !== null && !isNaN(br)) parts.push(`border-radius: ${br}px`);
+      if (borderRadius !== null && !isNaN(br)) parts.push(`border-radius: ${br}px`);
 
       if (isPixelSize) {
         if (type === 'fab') {
@@ -870,6 +896,13 @@ class GhFeedback extends HTMLElement {
 
     // Reset form
     this._resetForm();
+
+    // Apply deferred re-render if attributes changed while popup was open
+    if (this._pendingRender) {
+      this._pendingRender = false;
+      this._render();
+      this._bindEvents();
+    }
   }
 
   _getFocusableElements() {
@@ -944,7 +977,7 @@ class GhFeedback extends HTMLElement {
     const description = descTextarea.value.trim();
     const repo = this._parseRepo();
     const endpoint = this.getAttribute('endpoint');
-    const token = this.getAttribute('token');
+    const token = this.token;
 
     // Validation
     if (!title) {
@@ -1018,7 +1051,8 @@ class GhFeedback extends HTMLElement {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github+json'
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'gh-feedback/1.0'
           },
           body: JSON.stringify({
             title: payload.title,
@@ -1145,9 +1179,9 @@ class GhFeedback extends HTMLElement {
 
     // Append context if available
     if (payload.context && typeof payload.context === 'object') {
-      const escPipe = (s) => String(s).replace(/\|/g, '\\|');
+      const escMd = (s) => String(s).replace(/([|`*_~])/g, '\\$1');
       const rows = Object.entries(payload.context)
-        .map(([k, v]) => `| ${escPipe(k)} | ${escPipe(v)} |`)
+        .map(([k, v]) => `| ${escMd(k)} | ${escMd(v)} |`)
         .join('\n');
       body += `\n<details>\n<summary>Context</summary>\n\n| Key | Value |\n|-----|-------|\n${rows}\n\n</details>\n`;
     }
