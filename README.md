@@ -197,7 +197,7 @@ Override example:
 
 | Event | Detail | Cancelable | Description |
 |-------|--------|------------|-------------|
-| `gh-feedback:submit` | `{ title, type, description, labels, repo }` | Yes | Fires before submission. Call `preventDefault()` to cancel the request. |
+| `gh-feedback:submit` | `{ title, type, description, labels, repo, severity? }` | Yes | Fires before submission. Call `preventDefault()` to cancel the request. |
 | `gh-feedback:filed` | `{ issueNumber, issueUrl }` | No | Fires after the issue is successfully created. |
 | `gh-feedback:error` | `{ error }` | No | Fires when submission fails. `error` contains the message shown to the user. |
 
