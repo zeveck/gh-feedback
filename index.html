@@ -579,7 +579,7 @@
 
     <section id="proxy-setup">
       <h2>Proxy Setup (Recommended)</h2>
-      <p>The proxy keeps your GitHub token on the server. Users never see it.</p>
+      <p>The proxy keeps your GitHub token on the server. Users never see it. The included backend runs on <a href="https://workers.cloudflare.com/">Cloudflare Workers</a> (free tier) and deploys with <a href="https://developers.cloudflare.com/workers/wrangler/">Wrangler</a>, Cloudflare's CLI tool.</p>
 
       <h3>1. Prerequisites</h3>
       <ul>
@@ -587,13 +587,25 @@
         <li>A <a href="https://dash.cloudflare.com/sign-up">Cloudflare account</a> (free tier works)</li>
       </ul>
 
-      <h3>2. Create the worker</h3>
+      <h3>2. Log in to Cloudflare</h3>
+      <p><a href="https://developers.cloudflare.com/workers/wrangler/">Wrangler</a> is the CLI for Cloudflare Workers. You don't need to install it separately — <code>npx</code> runs it directly. Log in to connect it to your Cloudflare account:</p>
+      <pre><code>npx wrangler login</code></pre>
+      <p>This opens your browser for authentication. Once approved, Wrangler stores your credentials locally.</p>
+
+      <h3>3. Create the worker</h3>
       <p>Copy the <code>worker/</code> directory from this repo into your project, or start fresh:</p>
       <pre><code>mkdir gh-feedback-worker && cd gh-feedback-worker
 cp -r /path/to/gh-feedback/worker/* .
 npm init -y</code></pre>
 
-      <h3>3. Set your GitHub token</h3>
+      <h3>4. Configure the worker</h3>
+      <p>Open <code>wrangler.toml</code> and set these two values:</p>
+      <ul>
+        <li><strong><code>GITHUB_REPO</code></strong> — change <code>"owner/repo"</code> to your GitHub repository (e.g., <code>"acme/webapp"</code>)</li>
+        <li><strong><code>ALLOWED_ORIGINS</code></strong> — change <code>"*"</code> to your website's URL (e.g., <code>"https://your-site.com"</code>). During development, include localhost too: <code>"https://your-site.com,http://localhost:3000"</code>. The default <code>*</code> allows any site — restrict before going live</li>
+      </ul>
+
+      <h3>5. Create a GitHub token</h3>
       <p>Create a <strong>fine-grained</strong> Personal Access Token:</p>
       <ol>
         <li>Go to <a href="https://github.com/settings/tokens?type=beta">github.com/settings/tokens</a></li>
@@ -603,26 +615,18 @@ npm init -y</code></pre>
         <li>Under <strong>Permissions &gt; Repository permissions</strong>, set <strong>Issues</strong> to <strong>Read and Write</strong></li>
         <li>Click <strong>Generate token</strong> and copy it</li>
       </ol>
-      <p>Then store it as a Wrangler secret:</p>
+      <p>Then store it as a secret in your worker (secrets are encrypted and never appear in plain text):</p>
       <pre><code>npx wrangler secret put GITHUB_TOKEN
 # Paste the token when prompted</code></pre>
 
-      <h3>4. Configure the worker</h3>
-      <p>Open <code>worker/wrangler.toml</code> and set these two values:</p>
-      <ul>
-        <li><strong><code>GITHUB_REPO</code></strong> — change <code>"owner/repo"</code> to your GitHub repository (e.g., <code>"acme/webapp"</code>)</li>
-        <li><strong><code>ALLOWED_ORIGINS</code></strong> — change <code>"*"</code> to your website's URL (e.g., <code>"https://your-site.com"</code>). During development, include localhost too: <code>"https://your-site.com,http://localhost:3000"</code>. The default <code>*</code> allows any site — restrict before going live</li>
-      </ul>
-
-      <h3>5. Deploy</h3>
-      <pre><code>cd worker
-npx wrangler deploy</code></pre>
+      <h3>6. Deploy</h3>
+      <pre><code>npx wrangler deploy</code></pre>
       <p>Wrangler prints the worker URL, e.g., <code>https://gh-feedback-proxy.your-account.workers.dev</code>.</p>
 
-      <h3>6. Use it</h3>
+      <h3>7. Use it</h3>
       <pre><code>&lt;gh-feedback repo="https://github.com/you/repo" endpoint="https://gh-feedback-proxy.your-account.workers.dev/feedback"&gt;&lt;/gh-feedback&gt;</code></pre>
 
-      <h3>7. Verify</h3>
+      <h3>8. Verify</h3>
       <pre><code>curl -X POST https://gh-feedback-proxy.your-account.workers.dev/feedback \
   -H "Content-Type: application/json" \
   -d '{"title": "Test issue from curl", "type": "bug"}'</code></pre>

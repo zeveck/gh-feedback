@@ -55,14 +55,24 @@ The component needs a backend to securely file GitHub Issues (so your token stay
 
 ## Proxy Mode Setup (Recommended)
 
-The proxy keeps your GitHub token on the server. Users never see it.
+The proxy keeps your GitHub token on the server. Users never see it. The included backend runs on [Cloudflare Workers](https://workers.cloudflare.com/) (free tier) and deploys with [Wrangler](https://developers.cloudflare.com/workers/wrangler/), Cloudflare's CLI tool.
 
 ### 1. Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+ and npm
 - A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works)
 
-### 2. Create the worker
+### 2. Log in to Cloudflare
+
+[Wrangler](https://developers.cloudflare.com/workers/wrangler/) is the CLI for Cloudflare Workers. You don't need to install it separately — `npx` runs it directly. Log in to connect it to your Cloudflare account:
+
+```bash
+npx wrangler login
+```
+
+This opens your browser for authentication. Once approved, Wrangler stores your credentials locally.
+
+### 3. Create the worker
 
 Copy the `worker/` directory from this repo into your project, or start fresh:
 
@@ -72,7 +82,14 @@ cp -r /path/to/gh-feedback/worker/* .
 npm init -y
 ```
 
-### 3. Set your GitHub token
+### 4. Configure the worker
+
+Open `wrangler.toml` and set these two values:
+
+- **`GITHUB_REPO`** — change to your GitHub repository. Either format works: `"acme/webapp"` or `"https://github.com/acme/webapp"`
+- **`ALLOWED_ORIGINS`** — change `"*"` to your website's URL (e.g., `"https://your-site.com"`). During development, include localhost too: `"https://your-site.com,http://localhost:3000"`. The default `*` allows any site to use your worker — restrict this before going live
+
+### 5. Create a GitHub token
 
 Create a **fine-grained** Personal Access Token:
 
@@ -83,30 +100,22 @@ Create a **fine-grained** Personal Access Token:
 5. Under **Permissions > Repository permissions**, set **Issues** to **Read and Write**
 6. Click **Generate token** and copy it
 
-Then store it as a Wrangler secret:
+Then store it as a secret in your worker (secrets are encrypted and never appear in plain text):
 
 ```bash
 npx wrangler secret put GITHUB_TOKEN
 # Paste the token when prompted
 ```
 
-### 4. Configure the worker
-
-Open `worker/wrangler.toml` and set these two values:
-
-- **`GITHUB_REPO`** — change to your GitHub repository. Either format works: `"acme/webapp"` or `"https://github.com/acme/webapp"`
-- **`ALLOWED_ORIGINS`** — change `"*"` to your website's URL (e.g., `"https://your-site.com"`). During development, include localhost too: `"https://your-site.com,http://localhost:3000"`. The default `*` allows any site to use your worker — restrict this before going live
-
-### 5. Deploy
+### 6. Deploy
 
 ```bash
-cd worker
 npx wrangler deploy
 ```
 
 Wrangler prints the worker URL, e.g., `https://gh-feedback-proxy.your-account.workers.dev`.
 
-### 6. Use it
+### 7. Use it
 
 Add the component to your HTML with the worker URL as the endpoint:
 
@@ -115,7 +124,7 @@ Add the component to your HTML with the worker URL as the endpoint:
 <gh-feedback repo="https://github.com/you/repo" endpoint="https://gh-feedback-proxy.your-account.workers.dev/feedback"></gh-feedback>
 ```
 
-### 7. Verify
+### 8. Verify
 
 ```bash
 curl -X POST https://gh-feedback-proxy.your-account.workers.dev/feedback \
