@@ -1073,8 +1073,14 @@ class GhFeedback extends HTMLElement {
       if (!response.ok) {
         if (response.status >= 500) {
           this._onError('Server error — try again later');
+        } else if (response.status === 401) {
+          this._onError('GitHub token invalid or expired');
+        } else if (response.status === 403) {
+          this._onError('GitHub rate limit exceeded or insufficient permissions');
+        } else if (response.status === 404) {
+          this._onError('Repository not found — check the repo attribute');
         } else {
-          this._onError(data.error || `Request failed (${response.status})`);
+          this._onError(data.error || data.message || `Request failed (${response.status})`);
         }
         return;
       }
