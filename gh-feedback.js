@@ -252,7 +252,6 @@ const STYLES = `
   .type-pill {
     flex: 1 1 30%;
     min-width: 0;
-    max-width: 33%;
     padding: 6px 12px;
     border: 1px solid var(--_border);
     border-radius: 20px;
@@ -267,6 +266,7 @@ const STYLES = `
     gap: 4px;
     transition: background 0.1s, border-color 0.1s;
   }
+  .type-selector.multi-row .type-pill { max-width: 33%; }
   .type-pill:hover { border-color: var(--_popup-accent); }
   .type-pill:focus-visible { outline: 2px solid var(--_popup-accent); outline-offset: 2px; }
   .type-pill.active {
@@ -685,7 +685,7 @@ class GhFeedback extends HTMLElement {
             <h2>Send Feedback</h2>
             <button class="close-btn" aria-label="Close">&times;</button>
           </div>
-          <div class="type-selector">
+          <div class="type-selector${types.length > 3 ? ' multi-row' : ''}">
             ${types.map(key => {
               const def = TYPE_DEFS[key];
               const active = this._type === key ? ' active' : '';
