@@ -1164,11 +1164,23 @@ npx playwright test</code></pre>
     interceptSubmit(el);
     interceptSubmit(popupPreview);
 
-    // Re-open preview if the main element's open() closed it
-    const origOpen = el.open.bind(el);
-    el.open = function() {
-      origOpen();
-      if (state.showPopup) setTimeout(() => { popupPreview.open(); }, 0);
+    // Prevent the main demo and popup preview from closing each other.
+    // The component's _open() closes all other <gh-feedback> instances;
+    // temporarily no-op the other's _close during _open() so they coexist.
+    // Must patch _open (not open) because the internal click handler calls _open directly.
+    const origElInternalOpen = el._open.bind(el);
+    el._open = function() {
+      const saved = popupPreview._close;
+      popupPreview._close = () => {};
+      origElInternalOpen();
+      popupPreview._close = saved;
+    };
+    const origPreviewInternalOpen = popupPreview._open.bind(popupPreview);
+    popupPreview._open = function() {
+      const saved = el._close;
+      el._close = () => {};
+      origPreviewInternalOpen();
+      el._close = saved;
     };
 
     // Initial render
