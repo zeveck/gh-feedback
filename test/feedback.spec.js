@@ -642,6 +642,32 @@ test.describe('gh-feedback E2E', () => {
     expect(formVisible).toBe(true);
   });
 
+  // 24b. gh-feedback:error event fires on submission failure
+  test('gh-feedback:error event fires on submission failure', async ({ page }) => {
+    await page.route('**/feedback', route => route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    }));
+
+    // Set up listener before submit
+    await page.evaluate(() => {
+      window._errorDetail = null;
+      document.addEventListener('gh-feedback:error', (e) => {
+        window._errorDetail = e.detail;
+      });
+    });
+
+    await openAndFillTitle(page, 'fab-default', 'Error event test');
+    await shadowClick(page, 'gh-feedback#fab-default', '.submit-btn');
+
+    // Wait for error event
+    await page.waitForFunction(() => window._errorDetail !== null, { timeout: 5000 });
+
+    const detail = await page.evaluate(() => window._errorDetail);
+    expect(detail.error).toContain('Server error');
+  });
+
   // 25. Success auto-dismiss and form reset
   test('Success auto-dismiss and form reset', async ({ page }) => {
     await mockProxySuccess(page);

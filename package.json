@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A Web Component that adds a feedback button to any site and files GitHub Issues",
   "type": "module",
+  "types": "gh-feedback.d.ts",
   "scripts": {
     "test": "node --test test/worker.test.js",
     "test:e2e": "npx playwright test",

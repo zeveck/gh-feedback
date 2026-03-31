@@ -1133,6 +1133,12 @@ class GhFeedback extends HTMLElement {
     const submitBtn = this.shadowRoot.querySelector('.submit-btn');
     submitBtn.textContent = 'Submit Feedback';
 
+    // Dispatch error event
+    this.dispatchEvent(new CustomEvent('gh-feedback:error', {
+      bubbles: true, composed: true,
+      detail: { error: msg }
+    }));
+
     // Rate limit: disable for 5s
     this._startRateLimit(5);
   }

@@ -199,6 +199,7 @@ Override example:
 |-------|--------|------------|-------------|
 | `gh-feedback:submit` | `{ title, type, description, labels, repo }` | Yes | Fires before submission. Call `preventDefault()` to cancel the request. |
 | `gh-feedback:filed` | `{ issueNumber, issueUrl }` | No | Fires after the issue is successfully created. |
+| `gh-feedback:error` | `{ error }` | No | Fires when submission fails. `error` contains the message shown to the user. |
 
 Listener example:
 
@@ -246,6 +247,26 @@ fb.getContext = () => ({
 ```
 
 The returned object is included as a collapsible details section in the GitHub issue body, and sent as `context` in the proxy payload.
+
+## TypeScript
+
+Type definitions are included in `gh-feedback.d.ts`. Event listeners are fully typed:
+
+```ts
+import type { GhFeedback, SubmitDetail, FiledDetail, ErrorDetail } from './gh-feedback';
+
+const fb = document.querySelector('gh-feedback')!;
+
+fb.addEventListener('gh-feedback:filed', (e) => {
+  console.log(e.detail.issueNumber); // number
+});
+
+fb.addEventListener('gh-feedback:error', (e) => {
+  console.error(e.detail.error); // string
+});
+```
+
+Exported types: `FeedbackType`, `Severity`, `TriggerStyle`, `Position`, `Theme`, `IconName`, `Size`, `SubmitDetail`, `FiledDetail`, `ErrorDetail`, `GhFeedbackEventMap`.
 
 ## Examples
 

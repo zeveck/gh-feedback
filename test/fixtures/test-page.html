@@ -118,6 +118,13 @@
       entry.textContent = `filed: ${JSON.stringify(e.detail)}`;
       log.appendChild(entry);
     });
+    document.addEventListener('gh-feedback:error', (e) => {
+      const entry = document.createElement('div');
+      entry.className = 'event-entry';
+      entry.dataset.event = 'error';
+      entry.textContent = `error: ${JSON.stringify(e.detail)}`;
+      log.appendChild(entry);
+    });
   </script>
 </body>
 </html>
