@@ -656,6 +656,12 @@ npx wrangler deploy</code></pre>
             <td>No</td>
             <td>Fires after issue is successfully created.</td>
           </tr>
+          <tr>
+            <td><code>gh-feedback:error</code></td>
+            <td><code>{ error }</code></td>
+            <td>No</td>
+            <td>Fires when submission fails. <code>error</code> contains the message shown to the user.</td>
+          </tr>
         </tbody>
       </table>
 
@@ -676,6 +682,23 @@ fb.getContext = () => ({
   userAgent: navigator.userAgent,
   timestamp: new Date().toISOString()
 });</code></pre>
+    </section>
+
+    <section id="typescript">
+      <h2>TypeScript</h2>
+      <p>Type definitions are included in <code>gh-feedback.d.ts</code>. Event listeners are fully typed:</p>
+      <pre><code>import type { GhFeedback } from './gh-feedback';
+
+const fb = document.querySelector('gh-feedback')!;
+
+fb.addEventListener('gh-feedback:filed', (e) => {
+  console.log(e.detail.issueNumber); // number
+});
+
+fb.addEventListener('gh-feedback:error', (e) => {
+  console.error(e.detail.error); // string
+});</code></pre>
+      <p>Exported types: <code>FeedbackType</code>, <code>Severity</code>, <code>TriggerStyle</code>, <code>Position</code>, <code>Theme</code>, <code>IconName</code>, <code>Size</code>, <code>SubmitDetail</code>, <code>FiledDetail</code>, <code>ErrorDetail</code>, <code>GhFeedbackEventMap</code>.</p>
     </section>
 
     <section id="theming">
