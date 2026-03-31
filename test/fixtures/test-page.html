@@ -72,8 +72,11 @@
   <!-- Popup color independent of trigger color -->
   <gh-feedback id="popup-color-indep" repo="test/repo" endpoint="/feedback" color="#ff0000" popup-color="#0000ff" trigger="fab"></gh-feedback>
 
-  <!-- Custom types -->
+  <!-- Custom types (4 = multi-row) -->
   <gh-feedback id="custom-types" repo="test/repo" endpoint="/feedback" types="bug,feature,question,ui" trigger="fab"></gh-feedback>
+
+  <!-- Two types (single row, should fill width) -->
+  <gh-feedback id="two-types" repo="test/repo" endpoint="/feedback" types="bug,feature" trigger="fab"></gh-feedback>
 
   <!-- No type icons -->
   <gh-feedback id="no-type-icons" repo="test/repo" endpoint="/feedback" no-type-icons trigger="fab"></gh-feedback>

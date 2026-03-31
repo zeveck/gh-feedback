@@ -49,7 +49,7 @@ The component needs a backend to securely file GitHub Issues (so your token stay
 | `border-color` | `string` | — | Border color on the trigger element. |
 | `border-width` | `string` | — | Border width in pixels on the trigger element. |
 | `border-radius` | `string` | — | Border radius in pixels on the trigger element (overrides default). |
-| `popup-color` | `string` | — | Accent color for popup buttons and type pills (independent of trigger `color`). |
+| `popup-color` | `string` | — | Accent color for popup buttons and type pills. Defaults to the trigger `color`. |
 | `types` | `string` | `bug,feature,question` | Comma-separated list of category types to show. Available: `bug`, `feature`, `question`, `ui`, `docs`, `performance`. |
 | `no-type-icons` | boolean | — | When present, hides icons from the type category pills in the popup. |
 

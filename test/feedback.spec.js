@@ -1350,4 +1350,60 @@ test.describe('gh-feedback E2E', () => {
     expect(updatedCount).toBe('11 / 2000');
   });
 
+  // 60. Type pills fill row when 3 or fewer types (no multi-row class)
+  test('type pills fill row when 3 or fewer types', async ({ page }) => {
+    await shadowClick(page, 'gh-feedback#two-types', '.fab');
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#two-types').shadowRoot.querySelector('.popup')?.classList.contains('open')
+    );
+
+    const result = await page.evaluate(() => {
+      const sr = document.querySelector('gh-feedback#two-types').shadowRoot;
+      const selector = sr.querySelector('.type-selector');
+      const pills = sr.querySelectorAll('.type-pill');
+      return {
+        hasMultiRow: selector.classList.contains('multi-row'),
+        pillCount: pills.length,
+        types: Array.from(pills).map(p => p.dataset.type),
+      };
+    });
+    expect(result.hasMultiRow).toBe(false);
+    expect(result.pillCount).toBe(2);
+    expect(result.types).toEqual(['bug', 'feature']);
+  });
+
+  // 61. Type pills have multi-row class when more than 3 types
+  test('type pills have multi-row class when more than 3 types', async ({ page }) => {
+    await shadowClick(page, 'gh-feedback#custom-types', '.fab');
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#custom-types').shadowRoot.querySelector('.popup')?.classList.contains('open')
+    );
+
+    const result = await page.evaluate(() => {
+      const sr = document.querySelector('gh-feedback#custom-types').shadowRoot;
+      const selector = sr.querySelector('.type-selector');
+      const pills = sr.querySelectorAll('.type-pill');
+      return {
+        hasMultiRow: selector.classList.contains('multi-row'),
+        pillCount: pills.length,
+      };
+    });
+    expect(result.hasMultiRow).toBe(true);
+    expect(result.pillCount).toBe(4);
+  });
+
+  // 62. Default 3 types do not have multi-row class
+  test('default 3 types do not have multi-row class', async ({ page }) => {
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
+    );
+
+    const hasMultiRow = await page.evaluate(() => {
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
+      return sr.querySelector('.type-selector').classList.contains('multi-row');
+    });
+    expect(hasMultiRow).toBe(false);
+  });
+
 });

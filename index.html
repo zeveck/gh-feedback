@@ -53,12 +53,12 @@
     /* Hero */
     .hero {
       text-align: center;
-      padding: 40px 24px 24px;
+      padding: 28px 24px 20px;
     }
     .hero h1 {
       font-size: 2.5rem;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .hero h1 code {
       background: var(--code-bg);
@@ -67,7 +67,7 @@
       font-size: 2.2rem;
     }
     .hero .tagline {
-      font-size: 1.15rem;
+      font-size: 1rem;
       color: var(--muted);
       margin: 0 auto;
       white-space: nowrap;
@@ -99,6 +99,14 @@
       align-items: center;
       justify-content: center;
     }
+    .preview-card.has-popup {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 20px;
+      padding: 20px;
+      overflow: visible;
+    }
     .preview-card .preview-hint {
       color: var(--muted);
       font-size: 0.85rem;
@@ -112,6 +120,17 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Inline popup preview — non-modal, natural size, centered in preview card */
+    #popup-preview { display: none; }
+    #popup-preview::part(backdrop) { display: none !important; }
+    #popup-preview::part(popup) {
+      position: static;
+      max-height: none;
+      transform: none;
     }
     .controls-card h3 {
       font-size: 0.75rem;
@@ -148,12 +167,13 @@
       transition: background 0.12s, border-color 0.12s, color 0.12s;
       font-family: inherit;
     }
-    .pill-btn:hover { border-color: var(--accent); }
+    .pill-btn:hover { border-color: var(--panel-accent, var(--accent)); }
     .pill-btn.active {
-      background: var(--control-active);
+      background: var(--panel-accent, var(--control-active));
       color: var(--control-active-text);
-      border-color: var(--control-active);
+      border-color: var(--panel-accent, var(--control-active));
     }
+    .controls-card input[type="checkbox"] { accent-color: var(--panel-accent, var(--accent)); }
 
     .control-inline {
       display: flex;
@@ -369,7 +389,7 @@
   <!-- Interactive Playground -->
   <div class="playground">
     <!-- Left column: Trigger Button controls -->
-    <div class="controls-card">
+    <div class="controls-card" id="trigger-controls">
       <h3 style="margin-bottom:2px;font-size:0.95rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Trigger Button</h3>
 
       <table class="form-table">
@@ -385,13 +405,19 @@
     <!-- Center column: Live preview -->
     <div class="preview-card" id="preview-card">
       <div class="preview-hint" id="preview-hint" style="display:none"></div>
+      <gh-feedback id="popup-preview" trigger="none" repo="zeveck/gh-feedback" endpoint="/feedback" style="display:none;"></gh-feedback>
     </div>
 
     <!-- Right column: Popup controls -->
-    <div class="controls-card">
+    <div class="controls-card" id="popup-controls">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+        <h3 style="font-size:0.95rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:0;">Popup</h3>
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;cursor:pointer;color:var(--muted);"><input type="checkbox" id="ctrl-show-popup" style="width:13px;height:13px;"> Preview</label>
+      </div>
+
       <table class="form-table">
         <tr><td class="form-label">Theme</td><td><div class="control-row" data-group="theme"><button class="pill-btn active" data-value="light">Light</button><button class="pill-btn" data-value="dark">Dark</button></div></td></tr>
-        <tr><td class="form-label">Color</td><td><input type="color" id="ctrl-popup-color" value="#238636" style="vertical-align:middle;"></td></tr>
+        <tr><td class="form-label">Color</td><td><label style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;white-space:nowrap;"><input type="checkbox" id="ctrl-popup-follow" checked> Follow trigger</label> <input type="color" id="ctrl-popup-color" value="#238636" disabled style="vertical-align:middle;opacity:0.4;"></td></tr>
         <tr><td class="form-label">Categories</td><td><div id="type-checks" style="display:flex;flex-wrap:wrap;gap:4px;"><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="bug" checked>Bug</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="feature" checked>Feature</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="question" checked>Question</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="ui">UI</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="docs">Docs</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="performance">Perf</label></div></td></tr>
       </table>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
@@ -545,7 +571,7 @@
             <td><code>no-type-icons</code></td>
             <td>boolean</td>
             <td>--</td>
-            <td>When present, hides the emoji icons next to feedback type names in the popup.</td>
+            <td>When present, hides the icons next to feedback type names in the popup.</td>
           </tr>
         </tbody>
       </table>
@@ -784,6 +810,11 @@ npx playwright test</code></pre>
     const typeChecks = document.getElementById('type-checks');
     const sizePxInput = document.getElementById('ctrl-size-px');
     const popupColorInput = document.getElementById('ctrl-popup-color');
+    const popupFollowCheck = document.getElementById('ctrl-popup-follow');
+    const showPopupCheck = document.getElementById('ctrl-show-popup');
+    const popupPreview = document.getElementById('popup-preview');
+    const triggerControls = document.getElementById('trigger-controls');
+    const popupControls = document.getElementById('popup-controls');
     const borderColorInput = document.getElementById('ctrl-border-color');
     const borderWidthInput = document.getElementById('ctrl-border-width');
     const borderRadiusInput = document.getElementById('ctrl-border-radius');
@@ -799,7 +830,9 @@ npx playwright test</code></pre>
       color: '#238636',
       buttonText: '',
       showSeverity: true,
+      popupFollowTrigger: true,
       popupColor: '#238636',
+      showPopup: false,
       typeIcons: true,
       types: ['bug', 'feature', 'question'],
       borderColor: '',
@@ -808,8 +841,10 @@ npx playwright test</code></pre>
     };
 
     // Move the component into the preview card so FAB positioning is relative to it
+    // Ensure order: trigger (el) first, then popup preview below
     previewCard.style.position = 'relative';
     previewCard.appendChild(el);
+    previewCard.appendChild(popupPreview);
 
     // Pill button groups
     document.querySelectorAll('.control-row').forEach(row => {
@@ -838,6 +873,10 @@ npx playwright test</code></pre>
 
     colorInput.addEventListener('input', () => {
       state.color = colorInput.value;
+      if (state.popupFollowTrigger) {
+        state.popupColor = state.color;
+        popupColorInput.value = state.color;
+      }
       updateComponent();
     });
 
@@ -851,6 +890,17 @@ npx playwright test</code></pre>
       updateComponent();
     });
 
+    popupFollowCheck.addEventListener('change', () => {
+      state.popupFollowTrigger = popupFollowCheck.checked;
+      popupColorInput.disabled = popupFollowCheck.checked;
+      popupColorInput.style.opacity = popupFollowCheck.checked ? '0.4' : '1';
+      if (popupFollowCheck.checked) {
+        state.popupColor = state.color;
+        popupColorInput.value = state.color;
+      }
+      updateComponent();
+    });
+
     popupColorInput.addEventListener('input', () => {
       state.popupColor = popupColorInput.value;
       updateComponent();
@@ -859,6 +909,20 @@ npx playwright test</code></pre>
     typeIconsCheck.addEventListener('change', () => {
       state.typeIcons = typeIconsCheck.checked;
       updateComponent();
+    });
+
+    showPopupCheck.addEventListener('change', () => {
+      state.showPopup = showPopupCheck.checked;
+      if (state.showPopup) {
+        previewCard.classList.add('has-popup');
+        popupPreview.style.display = 'block';
+        syncPreview();
+        popupPreview.open();
+      } else {
+        popupPreview.close();
+        popupPreview.style.display = '';
+        previewCard.classList.remove('has-popup');
+      }
     });
 
     typeChecks.addEventListener('change', () => {
@@ -953,8 +1017,8 @@ npx playwright test</code></pre>
         el.removeAttribute('no-severity');
       }
 
-      // Popup color
-      if (state.popupColor !== '#238636') {
+      // Popup color — only set when not following trigger
+      if (!state.popupFollowTrigger) {
         el.setAttribute('popup-color', state.popupColor);
       } else {
         el.removeAttribute('popup-color');
@@ -990,6 +1054,14 @@ npx playwright test</code></pre>
         el.removeAttribute('border-radius');
       }
 
+      // Panel accent colors — left column follows trigger, right follows popup
+      triggerControls.style.setProperty('--panel-accent', state.color);
+      const effectivePopupColor = state.popupFollowTrigger ? state.color : state.popupColor;
+      popupControls.style.setProperty('--panel-accent', effectivePopupColor);
+
+      // Sync inline popup preview
+      if (state.showPopup) syncPreview();
+
       // Update hint text based on trigger type
       const hint = document.getElementById('preview-hint');
       if (state.trigger === 'fab') {
@@ -1001,6 +1073,22 @@ npx playwright test</code></pre>
       }
 
       updateCodeSnippet();
+    }
+
+    function syncPreview() {
+      // Mirror popup-relevant attributes to the inline preview element
+      const popupAttrs = ['theme', 'types', 'no-severity', 'no-type-icons', 'popup-color', 'color'];
+      for (const attr of popupAttrs) {
+        const val = el.getAttribute(attr);
+        if (val !== null) popupPreview.setAttribute(attr, val);
+        else popupPreview.removeAttribute(attr);
+      }
+      // The component defers re-renders while the popup is open.
+      // Force a render cycle by closing (which applies pending render) then re-opening.
+      popupPreview._isOpen = false;
+      popupPreview._render();
+      popupPreview._bindEvents();
+      popupPreview.open();
     }
 
     function updateCodeSnippet() {
@@ -1016,7 +1104,7 @@ npx playwright test</code></pre>
       if (state.theme !== 'light') attrs.push(`theme="${state.theme}"`);
       if (state.trigger === 'fab' && state.position !== 'bottom-right') attrs.push(`position="${state.position}"`);
       if (state.buttonText) attrs.push(`button-text="${escHtml(state.buttonText)}"`);
-      if (state.popupColor !== '#238636') attrs.push(`popup-color="${state.popupColor}"`);
+      if (!state.popupFollowTrigger) attrs.push(`popup-color="${state.popupColor}"`);
       if (!state.showSeverity) attrs.push('no-severity');
       if (!state.typeIcons) attrs.push('no-type-icons');
       const defaultTypes = ['bug', 'feature', 'question'];
@@ -1054,23 +1142,34 @@ npx playwright test</code></pre>
       }
     });
 
-    // Intercept submission (demo mode)
-    el.addEventListener('gh-feedback:submit', (e) => {
-      e.preventDefault();
-      const { title, type } = e.detail;
-      logEl.textContent = `Intercepted: "${title}" (${type}) -- no issue filed (demo mode)`;
+    // Intercept submission (demo mode) — both main and preview elements
+    function interceptSubmit(target, label) {
+      target.addEventListener('gh-feedback:submit', (e) => {
+        e.preventDefault();
+        const { title, type } = e.detail;
+        logEl.textContent = `Intercepted: "${title}" (${type}) -- no issue filed (demo mode)`;
 
-      setTimeout(() => {
-        const fakeNumber = Math.floor(Math.random() * 900) + 100;
-        el.dispatchEvent(new CustomEvent('gh-feedback:filed', {
-          detail: {
-            issueNumber: fakeNumber,
-            issueUrl: `https://github.com/zeveck/gh-feedback/issues/${fakeNumber}`
-          }
-        }));
-        logEl.textContent = `Demo: simulated Issue #${fakeNumber} filed successfully`;
-      }, 500);
-    });
+        setTimeout(() => {
+          const fakeNumber = Math.floor(Math.random() * 900) + 100;
+          target.dispatchEvent(new CustomEvent('gh-feedback:filed', {
+            detail: {
+              issueNumber: fakeNumber,
+              issueUrl: `https://github.com/zeveck/gh-feedback/issues/${fakeNumber}`
+            }
+          }));
+          logEl.textContent = `Demo: simulated Issue #${fakeNumber} filed successfully`;
+        }, 500);
+      });
+    }
+    interceptSubmit(el);
+    interceptSubmit(popupPreview);
+
+    // Re-open preview if the main element's open() closed it
+    const origOpen = el.open.bind(el);
+    el.open = function() {
+      origOpen();
+      if (state.showPopup) setTimeout(() => { popupPreview.open(); }, 0);
+    };
 
     // Initial render
     updateComponent();
