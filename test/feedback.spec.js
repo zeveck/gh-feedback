@@ -186,16 +186,20 @@ test.describe('gh-feedback E2E', () => {
     await page.waitForFunction(() =>
       document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
+    // Ensure focus is inside the popup before pressing Escape (Firefox needs this)
+    await page.waitForFunction(() => {
+      const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
+      return sr.activeElement?.id === 'ghf-title';
+    }, { timeout: 2000 });
     await page.keyboard.press('Escape');
     await page.waitForFunction(() =>
       !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
-    );
-    // Verify FAB is focused
-    const fabFocused = await page.evaluate(() => {
+    , { timeout: 5000 });
+    // Verify FAB is focused (poll — Firefox updates activeElement asynchronously)
+    await page.waitForFunction(() => {
       const el = document.querySelector('gh-feedback#fab-default');
       return el.shadowRoot.activeElement === el.shadowRoot.querySelector('.fab');
-    });
-    expect(fabFocused).toBe(true);
+    }, { timeout: 2000 });
   });
 
   // 7. Backdrop click closes popup
@@ -220,11 +224,11 @@ test.describe('gh-feedback E2E', () => {
     await page.waitForFunction(() =>
       !document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.popup')?.classList.contains('open')
     );
-    const fabFocused = await page.evaluate(() => {
+    // Poll — Firefox updates activeElement asynchronously after close
+    await page.waitForFunction(() => {
       const el = document.querySelector('gh-feedback#fab-default');
       return el.shadowRoot.activeElement === el.shadowRoot.querySelector('.fab');
-    });
-    expect(fabFocused).toBe(true);
+    }, { timeout: 2000 });
   });
 
   // 9. Focus trap — Tab wraps last-to-first
@@ -240,13 +244,10 @@ test.describe('gh-feedback E2E', () => {
     });
     // Tab should wrap to first focusable element (close button)
     await page.keyboard.press('Tab');
-    const activeTag = await page.evaluate(() => {
+    await page.waitForFunction(() => {
       const sr = document.querySelector('gh-feedback#fab-default').shadowRoot;
-      const active = sr.activeElement;
-      return active?.className || active?.tagName;
-    });
-    // First focusable in popup is the close button
-    expect(activeTag).toContain('close-btn');
+      return sr.activeElement?.className?.includes('close-btn');
+    }, { timeout: 2000 });
   });
 
   // 10. Focus trap — Shift+Tab wraps first-to-last
@@ -538,9 +539,9 @@ test.describe('gh-feedback E2E', () => {
   });
 
   // 21. Mobile viewport — bottom sheet
-  test('Mobile viewport — bottom sheet', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
-    // Reload to get fresh layout
+  test('Mobile viewport — bottom sheet', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 667 } });
+    const page = await context.newPage();
     await page.goto(FIXTURE);
     await page.waitForFunction(() => customElements.get('gh-feedback') !== undefined);
 
@@ -563,6 +564,7 @@ test.describe('gh-feedback E2E', () => {
     // No horizontal scroll
     const hasHScroll = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(hasHScroll).toBe(false);
+    await context.close();
   });
 
   // 22. Multiple instances — one popup at a time

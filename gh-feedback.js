@@ -827,9 +827,9 @@ class GhFeedback extends HTMLElement {
     };
     document.addEventListener('keydown', this._escapeHandler);
 
-    // Focus trap
+    // Focus trap — must be on shadowRoot so Firefox bubbles keydown from inner elements
     this._focusTrapHandler = (e) => {
-      if (e.key !== 'Tab') return;
+      if (e.key !== 'Tab' || !this._isOpen) return;
       const focusable = this._getFocusableElements();
       if (focusable.length === 0) return;
       const first = focusable[0];
@@ -869,8 +869,8 @@ class GhFeedback extends HTMLElement {
       }
     }, 160);
 
-    // Return focus to trigger
-    if (trigger) trigger.focus();
+    // Return focus to trigger (deferred so Firefox processes the close before focus moves)
+    if (trigger) setTimeout(() => trigger.focus(), 0);
 
     // Remove listeners
     if (this._escapeHandler) {
