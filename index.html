@@ -615,7 +615,7 @@ npm init -y</code></pre>
         <li>Under <strong>Permissions &gt; Repository permissions</strong>, set <strong>Issues</strong> to <strong>Read and Write</strong></li>
         <li>Click <strong>Generate token</strong> and copy it</li>
       </ol>
-      <p>Then store it as a secret in your worker (secrets are encrypted and never appear in plain text):</p>
+      <p>Then store it as a secret in your worker (secrets are encrypted and never appear in plain text). Run this from the worker directory created in step 3:</p>
       <pre><code>npx wrangler secret put GITHUB_TOKEN
 # Paste the token when prompted</code></pre>
 

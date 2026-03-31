@@ -100,7 +100,7 @@ Create a **fine-grained** Personal Access Token:
 5. Under **Permissions > Repository permissions**, set **Issues** to **Read and Write**
 6. Click **Generate token** and copy it
 
-Then store it as a secret in your worker (secrets are encrypted and never appear in plain text):
+Then store it as a secret in your worker (secrets are encrypted and never appear in plain text). Run this from the worker directory created in step 3:
 
 ```bash
 npx wrangler secret put GITHUB_TOKEN
