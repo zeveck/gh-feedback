@@ -55,8 +55,8 @@ export default {
     issueBody += `${desc}\n\n`;
     if (body.context && typeof body.context === 'object') {
       issueBody += `<details>\n<summary>Context</summary>\n\n| Key | Value |\n|-----|-------|\n`;
-      const escPipe = (s) => String(s).replace(/\|/g, '\\|');
-      issueBody += Object.entries(body.context).map(([k, v]) => `| ${escPipe(k)} | ${escPipe(v)} |`).join('\n');
+      const escMd = (s) => String(s).replace(/([|`*_~])/g, '\\$1');
+      issueBody += Object.entries(body.context).map(([k, v]) => `| ${escMd(k)} | ${escMd(v)} |`).join('\n');
       issueBody += `\n\n</details>\n\n`;
     }
     issueBody += `---\n*Filed via [gh-feedback](https://github.com/zeveck/gh-feedback)*`;
