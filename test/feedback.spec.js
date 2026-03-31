@@ -956,6 +956,35 @@ test.describe('gh-feedback E2E', () => {
     expect(capturedBody.severity).toBeUndefined();
   });
 
+  // 36b. severity omitted for non-bug types even when severity is enabled
+  test('severity omitted for non-bug types', async ({ page }) => {
+    let capturedBody = null;
+    await page.route('**/feedback', async route => {
+      capturedBody = JSON.parse(route.request().postData());
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ issueNumber: 71, issueUrl: 'https://github.com/test/repo/issues/71' }),
+      });
+    });
+
+    // with-severity has severity enabled and defaults to bug type
+    await openAndFillTitle(page, 'with-severity', 'Feature without severity');
+
+    // Switch to feature type
+    await shadowClick(page, 'gh-feedback#with-severity', '.type-pill[data-type="feature"]');
+    await shadowClick(page, 'gh-feedback#with-severity', '.submit-btn');
+
+    await page.waitForFunction(() => {
+      const sr = document.querySelector('gh-feedback#with-severity').shadowRoot;
+      return sr.querySelector('.success-msg')?.style.display === 'block';
+    }, { timeout: 5000 });
+
+    expect(capturedBody).not.toBeNull();
+    expect(capturedBody.type).toBe('feature');
+    expect(capturedBody.severity).toBeUndefined();
+  });
+
   // 37. direct mode: high severity adds priority label
   test('direct mode: high severity adds priority label', async ({ page }) => {
     let capturedBody = null;

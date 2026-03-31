@@ -996,7 +996,7 @@ class GhFeedback extends HTMLElement {
 
     // Build detail object
     const detail = { title, type: this._type, description, labels: this._getLabels(), repo };
-    if (!this.hasAttribute('no-severity')) detail.severity = this._severity;
+    if (!this.hasAttribute('no-severity') && this._type === 'bug') detail.severity = this._severity;
 
     // Dispatch cancelable submit event
     const submitEvent = new CustomEvent('gh-feedback:submit', {
@@ -1017,8 +1017,8 @@ class GhFeedback extends HTMLElement {
       labels: this._getLabels()
     };
 
-    // Add severity unless no-severity attribute is present
-    if (!this.hasAttribute('no-severity')) {
+    // Add severity only for bug type when severity is enabled
+    if (!this.hasAttribute('no-severity') && this._type === 'bug') {
       payload.severity = this._severity;
     }
 
