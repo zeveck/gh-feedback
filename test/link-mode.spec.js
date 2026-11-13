@@ -397,3 +397,27 @@ test('hooks set before the component loads survive its upgrade', async ({ page }
   const url = new URL(await page.evaluate(() => window._linked));
   expect(url.searchParams.get('body')).toContain('| early | yes |');
 });
+
+for (const [label, width, height] of [['upright phone', 390, 844], ['sideways phone', 852, 393], ['laptop', 1280, 720]]) {
+  test(`popup fits on screen: ${label} (${width}x${height})`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(FIXTURE);
+    await page.waitForFunction(() => customElements.get('gh-feedback'));
+    await setScreenshot(page, 'link');             // the tallest form: severity, thumbnail, hint
+    await openForm(page, 'link');
+    await page.waitForTimeout(250);                // let the open transition finish
+    const box = await shadow(page, 'link', `const r = root.querySelector('.popup').getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }`);
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.top).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(width + 0.5);
+    expect(box.bottom).toBeLessThanOrEqual(height + 0.5);
+    // Submit can always be reached (scrolled to, if the screen is short).
+    await shadow(page, 'link', `root.querySelector('.submit-btn').scrollIntoView({ block: 'nearest' })`);
+    const btn = await shadow(page, 'link', `const r = root.querySelector('.submit-btn').getBoundingClientRect(); return { top: r.top, bottom: r.bottom }`);
+    expect(btn.top).toBeGreaterThanOrEqual(0);
+    expect(btn.bottom).toBeLessThanOrEqual(height + 0.5);
+    await page.close();
+  });
+}
+
