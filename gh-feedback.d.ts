@@ -69,6 +69,14 @@ export declare class GhFeedback extends HTMLElement {
    */
   getScreenshot: (() => Blob | string | null | Promise<Blob | string | null>) | null;
 
+  /**
+   * Link mode: optional function that opens the pre-filled issue URL itself,
+   * instead of window.open(). Return true (or a Promise of true) if it opened.
+   * For app shells (such as Electron) where window.open() opens the system
+   * browser but returns null.
+   */
+  openLink: ((url: string) => boolean | Promise<boolean>) | null;
+
   /** Open the feedback popup programmatically. */
   open(): void;
 

@@ -319,6 +319,21 @@ test.describe('gh-feedback link mode', () => {
     expect(href).toBe(url.href);
   });
 
+  test('openLink hook opens the link instead of window.open', async ({ page }) => {
+    await stubOpen(page);
+    await page.evaluate(() => {
+      window._linked = [];
+      document.querySelector('gh-feedback#link').openLink = (url) => { window._linked.push(url); return true; };
+    });
+    await openForm(page, 'link');
+    await fill(page, 'link', '#ghf-title', 'Hooked');
+    await click(page, 'link', '.submit-btn');
+    const note = await waitForNote(page, 'link');
+    expect(await page.evaluate(() => window._linked.length)).toBe(1);
+    expect(await page.evaluate(() => window._opened.length)).toBe(0);
+    expect(note).toContain('GitHub opened in a new tab');
+  });
+
   test('Done closes and resets; submit event can cancel', async ({ page }) => {
     await stubOpen(page);
     await openForm(page, 'link');
@@ -360,4 +375,25 @@ test.describe('gh-feedback link mode', () => {
       await page.evaluate((id) => document.querySelector(`gh-feedback#${id}`).close(), id);
     }
   });
+});
+
+test('hooks set before the component loads survive its upgrade', async ({ page }) => {
+  await page.goto('/test/fixtures/early-hooks.html');
+  await page.waitForFunction(() => customElements.get('gh-feedback'));
+  const kept = await page.evaluate(() => {
+    const el = document.getElementById('early');
+    return [typeof el.getContext, typeof el.getScreenshot, typeof el.openLink, el.token, Object.prototype.hasOwnProperty.call(el, 'token')];
+  });
+  expect(kept).toEqual(['function', 'function', 'function', 'early-token', false]);
+
+  await page.evaluate(() => document.getElementById('early').open());
+  await page.waitForFunction(() => !document.getElementById('early').shadowRoot.querySelector('.shot').hidden);
+  await page.evaluate(() => {
+    const r = document.getElementById('early').shadowRoot;
+    r.querySelector('#ghf-title').value = 'Early';
+    r.querySelector('.submit-btn').click();
+  });
+  await page.waitForFunction(() => window._linked);
+  const url = new URL(await page.evaluate(() => window._linked));
+  expect(url.searchParams.get('body')).toContain('| early | yes |');
 });

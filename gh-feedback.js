@@ -490,9 +490,18 @@ class GhFeedback extends HTMLElement {
     this._escapeHandler = null;
     this._focusTrapHandler = null;
     this._pendingRender = false;
-    this.getContext = null;
-    this.getScreenshot = null;
+    // Hooks a page set before this script loaded are own properties already
+    // (the element was upgraded later): keep them rather than resetting them.
+    this.getContext = this.getContext ?? null;
+    this.getScreenshot = this.getScreenshot ?? null;
+    this.openLink = this.openLink ?? null;    // link mode: optional (url) => truthy if it opened the page itself
     this._token = null;
+    if (Object.prototype.hasOwnProperty.call(this, 'token')) {
+      // An early `el.token = ...` shadows the accessor; move it behind it.
+      const early = this.token;
+      delete this.token;
+      this.token = early;
+    }
     this._shot = null;       // Promise<Blob|null> captured when the form opened (link mode)
     this._shotUrl = null;    // object URL for the thumbnail / download link
     this._shotRemoved = false;
@@ -1288,11 +1297,18 @@ class GhFeedback extends HTMLElement {
     }
     const blob = shot ? await Promise.race([shot, new Promise(r => setTimeout(() => r(null), 1000))]) : null;
 
-    let tab = null;
-    try { tab = window.open(url, '_blank'); } catch { tab = null; }
-    if (tab) { try { tab.opener = null; } catch { /* cross-origin */ } }
+    let opened = false;
+    if (typeof this.openLink === 'function') {
+      // The page opens it (e.g. an app shell that sends links to the system browser).
+      try { opened = !!(await this.openLink(url)); } catch { opened = false; }
+    } else {
+      let tab = null;
+      try { tab = window.open(url, '_blank'); } catch { tab = null; }
+      if (tab) { try { tab.opener = null; } catch { /* cross-origin */ } }
+      opened = !!tab;
+    }
 
-    this._onLinkOpened({ url, opened: !!tab, copied, blob });
+    this._onLinkOpened({ url, opened, copied, blob });
   }
 
   /** Build the pre-filled new-issue URL, trimming context (then description) to fit. */
