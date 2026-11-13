@@ -159,6 +159,7 @@ Things to know:
 - **Labels come from the issue form,** not the `labels` attribute: GitHub ignores labels in a new-issue link unless the reporter can already label issues in the repo, but it always applies an issue form's `labels:`. Copy [`examples/ISSUE_TEMPLATE/bug.yml`](examples/ISSUE_TEMPLATE/bug.yml) to `.github/ISSUE_TEMPLATE/bug.yml` in your repo and set `template="bug.yml"`. Its labels must already exist in the repo.
 - **Long reports are trimmed** to keep the link under GitHub's length limit (about 6 KB): the longest context values are shortened first, then context rows dropped, then the description shortened, marked "(trimmed)".
 - **No server, no secret, no CSP changes:** nothing is fetched. If the browser blocks the new tab, the popup shows a link instead.
+- **Opening the link yourself:** set `openLink` to a function `(url) => true` to open it your own way. For example, in an Electron app, `window.open()` can hand the link to the system browser yet return `null`, which would otherwise read as a blocked tab: `fb.openLink = (url) => { window.open(url); return true; };`
 - `gh-feedback:opened` fires with `{ url, opened, screenshotCopied }` (there's no issue number yet, so `gh-feedback:filed` doesn't fire).
 
 ## Direct Mode

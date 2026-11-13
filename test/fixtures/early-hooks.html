@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>gh-feedback: hooks set before the component loads</title></head>
+<body>
+  <gh-feedback id="early" repo="test/repo" mode="link" trigger="none"></gh-feedback>
+  <script>
+    // A classic script runs before the module below defines <gh-feedback>,
+    // so these land on the element before it is upgraded.
+    const el = document.getElementById('early');
+    el.getContext = () => ({ early: 'yes' });
+    el.getScreenshot = () => {
+      const c = document.createElement('canvas'); c.width = 4; c.height = 4;
+      return c.toDataURL('image/png');
+    };
+    el.openLink = (url) => { window._linked = url; return true; };
+    el.token = 'early-token';
+  </script>
+  <script type="module" src="../../gh-feedback.js"></script>
+</body>
+</html>
