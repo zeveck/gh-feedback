@@ -417,6 +417,7 @@
 
       <table class="form-table">
         <tr><td class="form-label">Theme</td><td><div class="control-row" data-group="theme"><button class="pill-btn active" data-value="light">Light</button><button class="pill-btn" data-value="dark">Dark</button></div></td></tr>
+        <tr><td class="form-label">Mode</td><td><div class="control-row" data-group="mode"><button class="pill-btn active" data-value="proxy" title="Files the issue through your proxy">Proxy</button><button class="pill-btn" data-value="link" title="Opens a pre-filled GitHub issue; no server">Link</button></div></td></tr>
         <tr><td class="form-label">Color</td><td><label style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;white-space:nowrap;"><input type="checkbox" id="ctrl-popup-follow" checked> Follow trigger</label> <input type="color" id="ctrl-popup-color" value="#238636" disabled style="vertical-align:middle;opacity:0.4;"></td></tr>
         <tr><td class="form-label">Categories</td><td><div id="type-checks" style="display:flex;flex-wrap:wrap;gap:4px;"><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="bug" checked>Bug</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="feature" checked>Feature</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="question" checked>Question</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="ui">UI</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="docs">Docs</label><label style="display:inline-flex;align-items:center;gap:3px;font-size:0.8rem;cursor:pointer;"><input type="checkbox" data-type="performance">Perf</label></div></td></tr>
       </table>
@@ -449,8 +450,12 @@
 &gt;&lt;/gh-feedback&gt;</code></pre>
       <p>A hosted copy is also available as a convenience:</p>
       <pre><code>&lt;script type="module" src="https://gh-feedback.synapticnoise.com/gh-feedback.js"&gt;&lt;/script&gt;</code></pre>
-      <h3>2. Deploy a proxy backend</h3>
-      <p>The component needs a backend to securely file GitHub Issues (so your token stays server-side). See <a href="#proxy-setup">Proxy Setup</a> below, or use any backend that accepts the JSON payload.</p>
+      <h3>2. Choose how reports reach GitHub</h3>
+      <ul>
+        <li><strong>Link mode</strong> (no server): leave out <code>endpoint</code> and <code>token</code>. Submit opens GitHub's new-issue page, pre-filled, and the reporter files it from their own GitHub account. See <a href="#link-mode">Link Mode</a>.</li>
+        <li><strong>Proxy mode</strong> (recommended for public sites): a small backend files the issue, so reporters need no GitHub account and your token stays server-side. See <a href="#proxy-setup">Proxy Setup</a> below, or use any backend that accepts the JSON payload.</li>
+        <li><strong>Direct mode</strong>: a token in the page, for internal tools only. See <a href="#direct-mode">Direct Mode</a>.</li>
+      </ul>
     </section>
 
     <section id="attributes">
@@ -482,6 +487,24 @@
             <td>string</td>
             <td>--</td>
             <td>GitHub PAT for direct mode. Exposed in page source -- use proxy mode for public sites.</td>
+          </tr>
+          <tr>
+            <td><code>mode</code></td>
+            <td>string</td>
+            <td>auto</td>
+            <td><code>link</code>, <code>proxy</code> or <code>direct</code>. If unset: <code>endpoint</code> &rarr; proxy, <code>token</code> &rarr; direct, neither &rarr; link.</td>
+          </tr>
+          <tr>
+            <td><code>template</code></td>
+            <td>string</td>
+            <td>--</td>
+            <td>Link mode: issue template or form to open, e.g. <code>bug.yml</code> (in the repo's <code>.github/ISSUE_TEMPLATE/</code>).</td>
+          </tr>
+          <tr>
+            <td><code>template-field</code></td>
+            <td>string</td>
+            <td><code>description</code> for forms, else <code>body</code></td>
+            <td>Link mode: the URL parameter that carries the report. For a YAML issue form, the <code>id</code> of its textarea (GitHub ignores <code>body=</code> for forms).</td>
           </tr>
           <tr>
             <td><code>trigger</code></td>
@@ -653,6 +676,18 @@ npm init -y</code></pre>
       <p>The Cloudflare Worker in <code>worker/</code> is a good reference implementation (~80 lines). Adapt it to your platform.</p>
     </section>
 
+    <section id="link-mode">
+      <h2>Link Mode (no server)</h2>
+      <p>With no <code>endpoint</code> and no <code>token</code> (or with <code>mode="link"</code>), Submit doesn't send anything. It copies the page's screenshot to the clipboard (if the page gives one), opens GitHub's new-issue page pre-filled with the title, type, severity, description and context, and tells the reporter to paste the screenshot in (Ctrl/Cmd+V). If copying isn't possible, the screenshot is offered as a download.</p>
+      <pre><code>&lt;gh-feedback repo="https://github.com/you/repo" template="bug.yml"&gt;&lt;/gh-feedback&gt;</code></pre>
+      <ul>
+        <li><strong>The reporter needs a GitHub account</strong> and files the issue as themselves. For reporters without one, use proxy mode.</li>
+        <li><strong>Labels come from the issue form.</strong> GitHub ignores labels in a new-issue link unless the reporter can already label issues, but it always applies an issue form's <code>labels:</code>. Copy <a href="https://github.com/zeveck/gh-feedback/blob/main/examples/ISSUE_TEMPLATE/bug.yml">examples/ISSUE_TEMPLATE/bug.yml</a> to <code>.github/ISSUE_TEMPLATE/bug.yml</code> in your repo. Its labels must already exist.</li>
+        <li><strong>Long reports are trimmed</strong> to keep the link under GitHub's limit (about 6 KB): the longest context values first, then context rows, then the description.</li>
+        <li><code>gh-feedback:opened</code> fires with <code>{ url, opened, screenshotCopied }</code>.</li>
+      </ul>
+    </section>
+
     <section id="direct-mode">
       <h2>Direct Mode</h2>
       <p>If you don't want to set up a proxy, you can pass a GitHub token directly:</p>
@@ -676,15 +711,21 @@ npm init -y</code></pre>
         <tbody>
           <tr>
             <td><code>gh-feedback:submit</code></td>
-            <td><code>{ title, type, description, labels, repo, severity? }</code></td>
+            <td><code>{ title, type, description, labels, repo, mode, severity?, url? }</code></td>
             <td>Yes</td>
-            <td>Fires before submission. Call <code>preventDefault()</code> to cancel.</td>
+            <td>Fires before submission. Call <code>preventDefault()</code> to cancel. Link mode adds <code>url</code>.</td>
           </tr>
           <tr>
             <td><code>gh-feedback:filed</code></td>
             <td><code>{ issueNumber, issueUrl }</code></td>
             <td>No</td>
-            <td>Fires after issue is successfully created.</td>
+            <td>Fires after issue is successfully created (proxy and direct modes).</td>
+          </tr>
+          <tr>
+            <td><code>gh-feedback:opened</code></td>
+            <td><code>{ url, opened, screenshotCopied }</code></td>
+            <td>No</td>
+            <td>Link mode: fires after GitHub's new-issue page was opened (<code>opened</code> is false if the browser blocked the tab).</td>
           </tr>
           <tr>
             <td><code>gh-feedback:error</code></td>
@@ -712,6 +753,14 @@ fb.getContext = () => ({
   userAgent: navigator.userAgent,
   timestamp: new Date().toISOString()
 });</code></pre>
+    </section>
+
+    <section id="screenshots">
+      <h2>Screenshots</h2>
+      <p>In link mode, set <code>getScreenshot</code> to a function returning an image of the page: a <code>Blob</code>, a <code>data:image/...</code> URL, or a Promise of either (or <code>null</code>). It's called when the popup opens, before the popup is drawn. The popup shows a thumbnail with a Remove button, and on Submit the image is copied to the clipboard as PNG for the reporter to paste. GitHub hosts pasted images, so no storage is needed.</p>
+      <pre><code>// e.g. a game drawing to a canvas
+fb.getScreenshot = () =&gt; new Promise(resolve =&gt; canvas.toBlob(resolve, 'image/png'));</code></pre>
+      <p>A WebGL canvas keeps its pixels only until the next frame: capture right after drawing, or use <code>preserveDrawingBuffer: true</code>. Proxy and direct modes don't call it yet.</p>
     </section>
 
     <section id="typescript">
@@ -768,6 +817,7 @@ fb.addEventListener('gh-feedback:error', (e) => {
       <h2>Security &amp; CSP</h2>
       <p><strong>Proxy mode</strong> (recommended): Your GitHub token stays on the server. The browser only communicates with your worker endpoint.</p>
       <p><strong>Direct mode</strong>: The token is in the HTML source. Only for internal tools or pages behind auth.</p>
+      <p><strong>Link mode</strong>: No token anywhere and nothing fetched, so no CSP changes. The reporter files the issue from their own GitHub account.</p>
       <p>If your site uses a strict Content Security Policy, add the proxy endpoint to <code>connect-src</code>:</p>
       <pre><code>Content-Security-Policy: connect-src 'self' https://your-worker.workers.dev;</code></pre>
       <p>Shadow DOM <code>&lt;style&gt;</code> elements are CSP-exempt in modern browsers, so no <code>style-src</code> changes are needed.</p>
@@ -841,7 +891,8 @@ npx playwright test</code></pre>
       types: ['bug', 'feature', 'question'],
       borderColor: '',
       borderWidth: '',
-      borderRadius: ''
+      borderRadius: '',
+      mode: 'proxy'
     };
 
     // Move the component into the preview card so FAB positioning is relative to it
@@ -993,6 +1044,13 @@ npx playwright test</code></pre>
         el.removeAttribute('color');
       }
 
+      // Mode (link mode opens a pre-filled GitHub issue instead of POSTing)
+      if (state.mode === 'link') {
+        el.setAttribute('mode', 'link');
+      } else {
+        el.removeAttribute('mode');
+      }
+
       // Theme
       if (state.theme !== 'light') {
         el.setAttribute('theme', state.theme);
@@ -1081,7 +1139,7 @@ npx playwright test</code></pre>
 
     function syncPreview() {
       // Mirror popup-relevant attributes to the inline preview element
-      const popupAttrs = ['theme', 'types', 'no-severity', 'no-type-icons', 'popup-color', 'color'];
+      const popupAttrs = ['mode', 'theme', 'types', 'no-severity', 'no-type-icons', 'popup-color', 'color'];
       for (const attr of popupAttrs) {
         const val = el.getAttribute(attr);
         if (val !== null) popupPreview.setAttribute(attr, val);
@@ -1098,7 +1156,8 @@ npx playwright test</code></pre>
     function updateCodeSnippet() {
       const attrs = [];
       attrs.push('repo="https://github.com/you/repo"');
-      attrs.push('endpoint="https://your-worker.workers.dev/feedback"');
+      if (state.mode === 'link') attrs.push('template="bug.yml"');
+      else attrs.push('endpoint="https://your-worker.workers.dev/feedback"');
 
       if (state.trigger !== 'button') attrs.push(`trigger="${state.trigger}"`);
       if (state.icon !== 'memo') attrs.push(`icon="${state.icon}"`);
@@ -1150,7 +1209,11 @@ npx playwright test</code></pre>
     function interceptSubmit(target, label) {
       target.addEventListener('gh-feedback:submit', (e) => {
         e.preventDefault();
-        const { title, type } = e.detail;
+        const { title, type, mode, url } = e.detail;
+        if (mode === 'link') {
+          logEl.textContent = `Intercepted: "${title}" (${type}) -- would open GitHub's new-issue page (${url.length}-character link); not opened (demo mode)`;
+          return;
+        }
         logEl.textContent = `Intercepted: "${title}" (${type}) -- no issue filed (demo mode)`;
 
         setTimeout(() => {

@@ -1,0 +1,16 @@
+# Sample issue form for gh-feedback link mode.
+# Copy to .github/ISSUE_TEMPLATE/bug.yml in the repo that receives reports, and use
+#   <gh-feedback repo="you/repo" template="bug.yml"></gh-feedback>
+# GitHub adds the labels below to every issue filed with this form, even when the
+# reporter has no write access. Each label must already exist in the repo.
+name: Bug report
+description: Something isn't working
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description   # gh-feedback fills this field (change with template-field="...")
+    attributes:
+      label: What happened?
+      description: The report from the page, with its context. Paste a screenshot here too.
+    validations:
+      required: true
