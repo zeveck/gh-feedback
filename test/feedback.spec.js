@@ -231,6 +231,29 @@ test.describe('gh-feedback E2E', () => {
     }, { timeout: 2000 });
   });
 
+  test('Opening focuses the title, but never takes focus back', async ({ page }) => {
+    // Focus moved inside the popup straight after opening stays put.
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
+    await page.evaluate(() => document.querySelector('gh-feedback#fab-default').shadowRoot.querySelector('.close-btn').focus());
+    await page.waitForTimeout(150);
+    expect(await page.evaluate(() =>
+      document.querySelector('gh-feedback#fab-default').shadowRoot.activeElement?.className)).toContain('close-btn');
+    await shadowClick(page, 'gh-feedback#fab-default', '.close-btn');
+
+    // Closed straight after opening: focus goes back to the trigger, not into the closed popup.
+    await page.waitForTimeout(200);
+    await page.evaluate(() => { const el = document.querySelector('gh-feedback#fab-default'); el.open(); el.close(); });
+    await page.waitForTimeout(150);
+    expect(await page.evaluate(() =>
+      document.querySelector('gh-feedback#fab-default').shadowRoot.activeElement?.className)).toContain('fab');
+
+    // Left alone, it focuses the title.
+    await page.waitForTimeout(200);
+    await shadowClick(page, 'gh-feedback#fab-default', '.fab');
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#fab-default').shadowRoot.activeElement?.id === 'ghf-title', null, { timeout: 2000 });
+  });
+
   // 9. Focus trap — Tab wraps last-to-first
   test('Focus trap — Tab wraps last-to-first', async ({ page }) => {
     await shadowClick(page, 'gh-feedback#fab-default', '.fab');

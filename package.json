@@ -1,6 +1,6 @@
 {
   "name": "@zeveck/gh-feedback",
-  "version": "2026.11.13-2",
+  "version": "2026.11.13-3",
   "description": "A Web Component that adds a feedback button to any site and files GitHub Issues",
   "type": "module",
   "main": "gh-feedback.js",
