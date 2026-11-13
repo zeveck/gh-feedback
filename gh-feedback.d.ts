@@ -11,6 +11,7 @@ export type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
 export type Theme = 'light' | 'dark';
 export type IconName = 'chat' | 'bug' | 'megaphone' | 'lightbulb' | 'pencil' | 'flag' | 'memo' | 'none';
 export type Size = 'sm' | 'md' | 'lg' | (string & {});
+export type Mode = 'link' | 'proxy' | 'direct';
 
 export interface SubmitDetail {
   title: string;
@@ -18,12 +19,24 @@ export interface SubmitDetail {
   description: string;
   labels: string[];
   repo: string;
+  mode: Mode;
   severity?: Severity;
+  /** Link mode: the pre-filled new-issue URL about to open. */
+  url?: string;
 }
 
 export interface FiledDetail {
   issueNumber: number;
   issueUrl: string;
+}
+
+export interface OpenedDetail {
+  /** The pre-filled GitHub new-issue URL. */
+  url: string;
+  /** False if the browser blocked the new tab (the popup then shows a link). */
+  opened: boolean;
+  /** True if the screenshot was copied to the clipboard. */
+  screenshotCopied: boolean;
 }
 
 export interface ErrorDetail {
@@ -34,6 +47,7 @@ export interface GhFeedbackEventMap {
   'gh-feedback:submit': CustomEvent<SubmitDetail>;
   'gh-feedback:filed': CustomEvent<FiledDetail>;
   'gh-feedback:error': CustomEvent<ErrorDetail>;
+  'gh-feedback:opened': CustomEvent<OpenedDetail>;
 }
 
 export declare class GhFeedback extends HTMLElement {
@@ -47,6 +61,13 @@ export declare class GhFeedback extends HTMLElement {
    * Called at submission time. Errors in the callback are silently ignored.
    */
   getContext: (() => Record<string, string | number | boolean>) | null;
+
+  /**
+   * Link mode: optional callback returning a screenshot (Blob or data:image URL,
+   * or a Promise of one). Called when the popup opens, before it is drawn.
+   * Errors and null are ignored.
+   */
+  getScreenshot: (() => Blob | string | null | Promise<Blob | string | null>) | null;
 
   /** Open the feedback popup programmatically. */
   open(): void;

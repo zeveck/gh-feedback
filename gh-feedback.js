@@ -388,7 +388,85 @@ const STYLES = `
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Link mode: screenshot thumbnail and hints */
+  .shot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+  .shot[hidden] { display: none; }
+  .shot img {
+    max-width: 96px;
+    max-height: 64px;
+    border: 1px solid var(--_border);
+    border-radius: 4px;
+    object-fit: contain;
+    background: var(--_input-bg);
+  }
+  .shot-remove, .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--_popup-accent);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .shot-remove:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--_popup-accent); outline-offset: 2px; }
+  .link-hint {
+    font-size: 12px;
+    opacity: 0.75;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .link-note p { margin-bottom: 8px; }
+  .link-note .done-btn { margin-top: 12px; }
 `;
+
+/** Longest pre-filled new-issue URL link mode will build (GitHub answers 414 past its limit). */
+const LINK_URL_MAX = 6000;
+
+const SHOT_HINT = '<!-- Your screenshot is copied: click here and paste it (Ctrl/Cmd+V) -->';
+
+function dataUrlToBlob(url) {
+  const m = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(url);
+  if (!m) return null;
+  const type = m[1] || 'application/octet-stream';
+  if (!m[2]) return new Blob([decodeURIComponent(m[3])], { type });
+  const bin = atob(m[3]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+/** Normalise what getScreenshot() returned to an image Blob, or null. */
+async function toImageBlob(value) {
+  const v = await value;
+  if (v instanceof Blob) return v.size ? v : null;
+  if (typeof v === 'string' && v.startsWith('data:image/')) return dataUrlToBlob(v);
+  return null;
+}
+
+/** The clipboard only takes PNG, so re-encode anything else. */
+async function toPng(blob) {
+  if (blob.type === 'image/png') return blob;
+  const bmp = await createImageBitmap(blob);
+  const canvas = document.createElement('canvas');
+  canvas.width = bmp.width;
+  canvas.height = bmp.height;
+  canvas.getContext('2d').drawImage(bmp, 0, 0);
+  bmp.close?.();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('PNG encode failed'))), 'image/png'));
+}
+
+function canCopyImage() {
+  return typeof ClipboardItem !== 'undefined' && !!navigator.clipboard?.write &&
+    (typeof ClipboardItem.supports !== 'function' || ClipboardItem.supports('image/png'));
+}
 
 function esc(str) {
   const d = document.createElement('div');
@@ -398,7 +476,7 @@ function esc(str) {
 
 class GhFeedback extends HTMLElement {
   static get observedAttributes() {
-    return ['repo', 'endpoint', 'token', 'position', 'theme', 'labels', 'button-text', 'trigger', 'no-severity', 'no-type-icons', 'icon', 'size', 'color', 'popup-color', 'types', 'border-color', 'border-width', 'border-radius'];
+    return ['repo', 'endpoint', 'token', 'position', 'theme', 'labels', 'button-text', 'trigger', 'no-severity', 'no-type-icons', 'icon', 'size', 'color', 'popup-color', 'types', 'border-color', 'border-width', 'border-radius', 'mode', 'template', 'template-field'];
   }
 
   constructor() {
@@ -413,7 +491,11 @@ class GhFeedback extends HTMLElement {
     this._focusTrapHandler = null;
     this._pendingRender = false;
     this.getContext = null;
+    this.getScreenshot = null;
     this._token = null;
+    this._shot = null;       // Promise<Blob|null> captured when the form opened (link mode)
+    this._shotUrl = null;    // object URL for the thumbnail / download link
+    this._shotRemoved = false;
   }
 
   /** Set token via JS property to avoid exposing it in the DOM. */
@@ -535,6 +617,23 @@ class GhFeedback extends HTMLElement {
     const t = this.getAttribute('trigger');
     if (t === 'fab' || t === 'link' || t === 'none') return t;
     return 'button';
+  }
+
+  /**
+   * How Submit files the report: "proxy" (POST to endpoint), "direct" (GitHub API
+   * with a token), or "link" (open a pre-filled GitHub new-issue page; no server).
+   * An explicit mode attribute wins; otherwise endpoint → proxy, token → direct, else link.
+   */
+  _getMode() {
+    const m = this.getAttribute('mode');
+    if (m === 'link' || m === 'proxy' || m === 'direct') return m;
+    if (this.getAttribute('endpoint')) return 'proxy';
+    if (this.token) return 'direct';
+    return 'link';
+  }
+
+  _submitLabel() {
+    return this._getMode() === 'link' ? 'Continue on GitHub' : 'Submit Feedback';
   }
 
   /**
@@ -703,8 +802,14 @@ class GhFeedback extends HTMLElement {
             <textarea id="ghf-desc" maxlength="2000" rows="4" placeholder="Details (optional, supports markdown)"></textarea>
             <div class="char-count">0 / 2000</div>
           </div>
+          <div class="shot" hidden>
+            <img alt="Screenshot to include">
+            <span>Screenshot included</span>
+            <button class="shot-remove" type="button">Remove</button>
+          </div>
           <div class="error-msg" role="alert"></div>
-          <button class="submit-btn" type="button">Submit Feedback</button>
+          <button class="submit-btn" type="button">${this._submitLabel()}</button>${this._getMode() === 'link' ? `
+          <div class="link-hint">Opens GitHub to finish your report (you'll need a GitHub account).</div>` : ''}
         </div>
         <div class="success-msg" style="display:none">
           <div class="check">&#10003;</div>
@@ -772,6 +877,37 @@ class GhFeedback extends HTMLElement {
     typePills.forEach(pill => pill.addEventListener('click', clearError));
 
     submitBtn.addEventListener('click', (e) => this._handleSubmit(e));
+
+    shadow.querySelector('.shot-remove').addEventListener('click', () => {
+      this._shotRemoved = true;
+      shadow.querySelector('.shot').hidden = true;
+      titleInput.focus();
+    });
+  }
+
+  /** Link mode: ask the page for a screenshot now, before the popup covers anything. */
+  _captureScreenshot() {
+    this._clearScreenshot();
+    if (this._getMode() !== 'link' || typeof this.getScreenshot !== 'function') return;
+    let result;
+    try { result = this.getScreenshot(); } catch { return; }
+    const shot = toImageBlob(result).catch(() => null);
+    this._shot = shot;
+    shot.then(blob => {
+      if (!blob || this._shot !== shot || !this._isOpen) return;
+      this._shotUrl = URL.createObjectURL(blob);
+      const box = this.shadowRoot.querySelector('.shot');
+      box.querySelector('img').src = this._shotUrl;
+      box.hidden = this._shotRemoved;
+    });
+  }
+
+  _clearScreenshot() {
+    this._shot = null;
+    this._shotRemoved = false;
+    if (this._shotUrl) { URL.revokeObjectURL(this._shotUrl); this._shotUrl = null; }
+    const box = this.shadowRoot?.querySelector('.shot');
+    if (box) { box.hidden = true; box.querySelector('img').removeAttribute('src'); }
   }
 
   _updateSeverityVisibility() {
@@ -785,6 +921,9 @@ class GhFeedback extends HTMLElement {
   }
 
   _open() {
+    // Screenshot first, while the page is still uncovered (only on a fresh open)
+    if (!this._isOpen) this._captureScreenshot();
+
     // Close all other instances first
     document.querySelectorAll('gh-feedback').forEach(el => {
       if (el !== this) el._close?.();
@@ -924,6 +1063,9 @@ class GhFeedback extends HTMLElement {
     const formView = shadow.querySelector('.form-view');
     const submitBtn = shadow.querySelector('.submit-btn');
 
+    this._clearScreenshot();
+    const note = shadow.querySelector('.link-note');
+    if (note) note.remove();
     if (titleInput) titleInput.value = '';
     if (descTextarea) descTextarea.value = '';
     if (charCount) charCount.textContent = '0 / 2000';
@@ -948,7 +1090,7 @@ class GhFeedback extends HTMLElement {
     // Re-enable fields
     this._setFieldsDisabled(false);
     if (submitBtn) {
-      submitBtn.textContent = 'Submit Feedback';
+      submitBtn.textContent = this._submitLabel();
       submitBtn.disabled = false;
     }
   }
@@ -989,13 +1131,15 @@ class GhFeedback extends HTMLElement {
       this._showError('Invalid repo — use "owner/repo" or a GitHub URL');
       return;
     }
-    if (!endpoint && !token) {
+    const mode = this._getMode();
+    if (mode === 'link') return this._submitLink(title, description, repo);
+    if ((mode === 'proxy' && !endpoint) || (mode === 'direct' && !token)) {
       this._showError('No endpoint or token configured');
       return;
     }
 
     // Build detail object
-    const detail = { title, type: this._type, description, labels: this._getLabels(), repo };
+    const detail = { title, type: this._type, description, labels: this._getLabels(), repo, mode };
     if (!this.hasAttribute('no-severity') && this._type === 'bug') detail.severity = this._severity;
 
     // Dispatch cancelable submit event
@@ -1031,7 +1175,7 @@ class GhFeedback extends HTMLElement {
 
     try {
       let response;
-      if (endpoint) {
+      if (mode === 'proxy') {
         // Proxy mode
         response = await fetch(endpoint, {
           method: 'POST',
@@ -1101,6 +1245,148 @@ class GhFeedback extends HTMLElement {
     }
   }
 
+  /**
+   * Link mode: no server. Copy the screenshot to the clipboard, then open GitHub's
+   * new-issue page pre-filled with the report. Both need the click's user activation,
+   * so nothing here may wait long before window.open().
+   */
+  async _submitLink(title, description, repo) {
+    const shadow = this.shadowRoot;
+    const payload = { title, type: this._type, description };
+    if (!this.hasAttribute('no-severity') && this._type === 'bug') payload.severity = this._severity;
+    let context = null;
+    if (typeof this.getContext === 'function') {
+      try { context = this.getContext(); } catch { /* ignore errors in user callback */ }
+    }
+    if (context && typeof context === 'object') payload.context = context;
+
+    const shot = this._shotRemoved ? null : this._shot;
+    const url = this._buildLinkUrl(payload, repo, !!shot);
+
+    const detail = { ...payload, labels: this._getLabels(), repo, mode: 'link', url };
+    delete detail.context;
+    const submitEvent = new CustomEvent('gh-feedback:submit', {
+      bubbles: true, composed: true, cancelable: true, detail
+    });
+    if (!this.dispatchEvent(submitEvent)) return;
+
+    this._setFieldsDisabled(true);
+    const submitBtn = shadow.querySelector('.submit-btn');
+    submitBtn.disabled = true;
+
+    // Copy first: once the new tab takes focus, the clipboard refuses writes.
+    let copied = false;
+    if (shot && canCopyImage()) {
+      try {
+        const png = shot.then(b => (b ? toPng(b) : Promise.reject(new Error('no screenshot'))));
+        const write = navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+        copied = await Promise.race([
+          write.then(() => true, () => false),
+          new Promise(r => setTimeout(() => r(false), 1000)),
+        ]);
+      } catch { copied = false; }
+    }
+    const blob = shot ? await Promise.race([shot, new Promise(r => setTimeout(() => r(null), 1000))]) : null;
+
+    let tab = null;
+    try { tab = window.open(url, '_blank'); } catch { tab = null; }
+    if (tab) { try { tab.opener = null; } catch { /* cross-origin */ } }
+
+    this._onLinkOpened({ url, opened: !!tab, copied, blob });
+  }
+
+  /** Build the pre-filled new-issue URL, trimming context (then description) to fit. */
+  _buildLinkUrl(payload, repo, withShot) {
+    const template = this.getAttribute('template');
+    const isForm = !!template && /\.ya?ml$/i.test(template);
+    const field = this.getAttribute('template-field') || (isForm ? 'description' : 'body');
+
+    const clip = (s, n) => (s.length > n ? s.slice(0, Math.max(0, n - 1)) + '…' : s);
+    let ctx = payload.context
+      ? Object.entries(payload.context).map(([k, v]) => [clip(String(k), 60), String(v)])
+      : null;
+    let desc = payload.description || '';
+    let descTrimmed = false;
+
+    const build = () => {
+      const p = { ...payload, description: desc + (descTrimmed ? ' … (trimmed)' : '') };
+      if (ctx) p.context = Object.fromEntries(ctx); else delete p.context;
+      const params = new URLSearchParams();
+      params.set('title', payload.title);
+      if (template) params.set('template', template);
+      params.set(field, this._buildIssueBody(p, { shotHint: withShot }));
+      return `https://github.com/${repo}/issues/new?${params}`;
+    };
+
+    let url = build();
+    while (url.length > LINK_URL_MAX) {
+      if (ctx && ctx.length) {
+        // Shorten the longest value; once all are short, drop the last row.
+        let li = 0;
+        ctx.forEach(([, v], i) => { if (v.length > ctx[li][1].length) li = i; });
+        const longest = ctx[li][1];
+        if (longest.length > 40) ctx[li][1] = clip(longest, Math.max(40, Math.floor(longest.length / 2)));
+        else ctx.pop();
+        if (!ctx.length) ctx = null;
+      } else if (desc.length) {
+        const over = url.length - LINK_URL_MAX;
+        desc = desc.slice(0, Math.max(0, desc.length - Math.max(20, Math.ceil(over / 3))));
+        descTrimmed = true;
+      } else {
+        break;
+      }
+      url = build();
+    }
+    return url;
+  }
+
+  _onLinkOpened({ url, opened, copied, blob }) {
+    const shadow = this.shadowRoot;
+    const formView = shadow.querySelector('.form-view');
+    const successMsg = shadow.querySelector('.success-msg');
+    const successText = shadow.querySelector('.success-text');
+    shadow.querySelector('.check').style.display = 'none';
+
+    const note = document.createElement('div');
+    note.className = 'link-note';
+    const para = (...parts) => { const p = document.createElement('p'); p.append(...parts); note.append(p); return p; };
+    const link = (text, href, extra = {}) => {
+      const a = document.createElement('a');
+      a.href = href; a.textContent = text; a.target = '_blank'; a.rel = 'noopener';
+      Object.assign(a, extra);
+      return a;
+    };
+
+    if (opened) para('GitHub opened in a new tab. Finish your report there.');
+    else para('Your browser blocked the new tab. ', link('Open GitHub to finish your report', url));
+    if (copied) {
+      para('Your screenshot is copied: paste it into the issue (Ctrl/Cmd+V).');
+    } else if (blob) {
+      if (!this._shotUrl) this._shotUrl = URL.createObjectURL(blob);
+      para(link('Download the screenshot', this._shotUrl, { download: 'screenshot.png', target: '' }),
+        ' and drag it into the issue.');
+    }
+    if (opened) para(link('Open it again', url));
+
+    const done = document.createElement('button');
+    done.type = 'button';
+    done.className = 'submit-btn done-btn';
+    done.textContent = 'Done';
+    done.addEventListener('click', () => this._close());
+    note.append(done);
+
+    successText.textContent = '';
+    successText.append(note);
+    formView.style.display = 'none';
+    successMsg.style.display = 'block';
+    setTimeout(() => done.focus(), 0);
+
+    this.dispatchEvent(new CustomEvent('gh-feedback:opened', {
+      bubbles: true, composed: true,
+      detail: { url, opened, screenshotCopied: copied }
+    }));
+  }
+
   _onSuccess(issueNumber, issueUrl) {
     const shadow = this.shadowRoot;
     const formView = shadow.querySelector('.form-view');
@@ -1109,6 +1395,7 @@ class GhFeedback extends HTMLElement {
 
     formView.style.display = 'none';
     successMsg.style.display = 'block';
+    shadow.querySelector('.check').style.display = '';
     successText.textContent = '';
     successText.append('Issue filed! ');
     const link = document.createElement('a');
@@ -1137,7 +1424,7 @@ class GhFeedback extends HTMLElement {
     this._showError(msg);
     this._setFieldsDisabled(false);
     const submitBtn = this.shadowRoot.querySelector('.submit-btn');
-    submitBtn.textContent = 'Submit Feedback';
+    submitBtn.textContent = this._submitLabel();
 
     // Dispatch error event
     this.dispatchEvent(new CustomEvent('gh-feedback:error', {
@@ -1170,14 +1457,14 @@ class GhFeedback extends HTMLElement {
         clearInterval(this._rateLimitTimer);
         this._rateLimitTimer = null;
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Feedback';
+        submitBtn.textContent = this._submitLabel();
       } else {
         updateText();
       }
     }, 1000);
   }
 
-  _buildIssueBody(payload) {
+  _buildIssueBody(payload, { shotHint = false } = {}) {
     const typeLabel = TYPE_DEFS[payload.type]?.label || 'Bug';
     const desc = payload.description || 'No description provided';
     let body = `**Type:** ${typeLabel}\n`;
@@ -1188,6 +1475,7 @@ class GhFeedback extends HTMLElement {
     }
 
     body += `\n${desc}\n`;
+    if (shotHint) body += `\n${SHOT_HINT}\n`;
 
     // Append context if available
     if (payload.context && typeof payload.context === 'object') {

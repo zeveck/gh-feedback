@@ -348,7 +348,20 @@ test.describe('gh-feedback E2E', () => {
   });
 
   // 13. No endpoint/token shows config error
-  test('No endpoint/token shows config error', async ({ page }) => {
+  test('mode="proxy" without endpoint shows config error', async ({ page }) => {
+    await page.evaluate(() => document.querySelector('gh-feedback#proxy-no-endpoint').open());
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#proxy-no-endpoint').shadowRoot.querySelector('.popup')?.classList.contains('open')
+    );
+    await shadowFill(page, 'gh-feedback#proxy-no-endpoint', '#ghf-title', 'Test title');
+    await shadowClick(page, 'gh-feedback#proxy-no-endpoint', '.submit-btn');
+
+    const errorText = await shadowText(page, 'gh-feedback#proxy-no-endpoint', '.error-msg');
+    expect(errorText).toContain('No endpoint or token configured');
+  });
+
+  test('No endpoint/token falls back to link mode', async ({ page }) => {
+    await page.evaluate(() => { window._opened = []; window.open = (u) => { window._opened.push(u); return {}; }; });
     await shadowClick(page, 'gh-feedback#no-config', '.fab');
     await page.waitForFunction(() =>
       document.querySelector('gh-feedback#no-config').shadowRoot.querySelector('.popup')?.classList.contains('open')
@@ -356,8 +369,9 @@ test.describe('gh-feedback E2E', () => {
     await shadowFill(page, 'gh-feedback#no-config', '#ghf-title', 'Test title');
     await shadowClick(page, 'gh-feedback#no-config', '.submit-btn');
 
-    const errorText = await shadowText(page, 'gh-feedback#no-config', '.error-msg');
-    expect(errorText).toContain('No endpoint or token configured');
+    await page.waitForFunction(() => window._opened.length === 1);
+    const url = await page.evaluate(() => window._opened[0]);
+    expect(url).toContain('https://github.com/test/repo/issues/new?');
   });
 
   // 14. Proxy mode submit — success (loading -> success -> auto-close)

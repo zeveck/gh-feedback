@@ -28,8 +28,18 @@
   <!-- With button-text (pill shape) -->
   <gh-feedback id="pill" repo="test/repo" endpoint="/feedback" button-text="Help" trigger="fab"></gh-feedback>
 
-  <!-- No config (no endpoint or token) — for error testing -->
+  <!-- No config (no endpoint or token) — falls back to link mode -->
   <gh-feedback id="no-config" repo="test/repo" trigger="fab"></gh-feedback>
+
+  <!-- Explicit proxy mode with no endpoint — for config error testing -->
+  <gh-feedback id="proxy-no-endpoint" repo="test/repo" mode="proxy" trigger="none"></gh-feedback>
+
+  <!-- Link mode variants -->
+  <gh-feedback id="link" repo="test/repo" trigger="none"></gh-feedback>
+  <gh-feedback id="link-explicit" repo="test/repo" mode="link" endpoint="/feedback" trigger="none"></gh-feedback>
+  <gh-feedback id="link-form" repo="test/repo" template="bug.yml" trigger="none"></gh-feedback>
+  <gh-feedback id="link-md" repo="test/repo" template="bug.md" trigger="none"></gh-feedback>
+  <gh-feedback id="link-field" repo="test/repo" template="bug.yml" template-field="what-happened" trigger="none"></gh-feedback>
 
   <!-- With labels attribute -->
   <gh-feedback id="with-labels" repo="test/repo" endpoint="/feedback" labels="feedback,user-reported" trigger="fab"></gh-feedback>
