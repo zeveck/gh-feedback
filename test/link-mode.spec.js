@@ -405,13 +405,16 @@ for (const [label, width, height] of [['upright phone', 390, 844], ['sideways ph
     await page.waitForFunction(() => customElements.get('gh-feedback'));
     await setScreenshot(page, 'link');             // the tallest form: severity, thumbnail, hint
     await openForm(page, 'link');
-    await page.waitForTimeout(250);                // let the open transition finish
+    // Let the open transition finish (WebKit can take longer than a fixed wait).
+    await page.waitForFunction(() =>
+      document.querySelector('gh-feedback#link').shadowRoot.querySelector('.popup').getAnimations().length === 0);
     const box = await shadow(page, 'link', `const r = root.querySelector('.popup').getBoundingClientRect();
       return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }`);
-    expect(box.left).toBeGreaterThanOrEqual(0);
-    expect(box.top).toBeGreaterThanOrEqual(0);
-    expect(box.right).toBeLessThanOrEqual(width + 0.5);
-    expect(box.bottom).toBeLessThanOrEqual(height + 0.5);
+    const where = `popup at ${JSON.stringify(box)}`;
+    expect(box.left, where).toBeGreaterThanOrEqual(0);
+    expect(box.top, where).toBeGreaterThanOrEqual(0);
+    expect(box.right, where).toBeLessThanOrEqual(width + 0.5);
+    expect(box.bottom, where).toBeLessThanOrEqual(height + 0.5);
     // Submit can always be reached (scrolled to, if the screen is short).
     await shadow(page, 'link', `root.querySelector('.submit-btn').scrollIntoView({ block: 'nearest' })`);
     const btn = await shadow(page, 'link', `const r = root.querySelector('.submit-btn').getBoundingClientRect(); return { top: r.top, bottom: r.bottom }`);
