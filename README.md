@@ -236,6 +236,10 @@ Override example:
 | `gh-feedback:filed` | `{ issueNumber, issueUrl }` | No | Fires after the issue is successfully created (proxy and direct modes). |
 | `gh-feedback:opened` | `{ url, opened, screenshotCopied }` | No | Link mode: fires after GitHub's new-issue page was opened (`opened` is false if the browser blocked the tab). |
 | `gh-feedback:error` | `{ error }` | No | Fires when submission fails. `error` contains the message shown to the user. |
+| `gh-feedback:open` | none | No | Fires when the popup opens. |
+| `gh-feedback:close` | none | No | Fires when the popup closes. |
+
+While the popup is open, key presses (`keydown`, `keyup`, `keypress`) and pointer, mouse, touch and wheel events inside it stop at the component, so a game listening on `window` or `document` doesn't react to typing. Listeners registered in the capture phase still see them. Opening the popup also releases pointer lock, and leaves fullscreen if an element (such as a game canvas) is fullscreen.
 
 Listener example:
 
@@ -268,6 +272,9 @@ Methods:
 - `element.open()` — open the feedback popup
 - `element.close()` — close the popup
 - `element.toggle()` — toggle open/closed
+- `element.isOpen` — `true` while the popup is open (read-only)
+
+Closing returns focus to whatever had it before the popup opened (or to the trigger).
 
 ## Context Capture
 

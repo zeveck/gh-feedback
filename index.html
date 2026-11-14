@@ -733,8 +733,22 @@ npm init -y</code></pre>
             <td>No</td>
             <td>Fires when submission fails. <code>error</code> contains the message shown to the user.</td>
           </tr>
+          <tr>
+            <td><code>gh-feedback:open</code></td>
+            <td>none</td>
+            <td>No</td>
+            <td>Fires when the popup opens. <code>element.isOpen</code> is <code>true</code> while it's open.</td>
+          </tr>
+          <tr>
+            <td><code>gh-feedback:close</code></td>
+            <td>none</td>
+            <td>No</td>
+            <td>Fires when the popup closes.</td>
+          </tr>
         </tbody>
       </table>
+
+      <p>While the popup is open, key, pointer, mouse, touch and wheel events inside it stop at the component, so a game listening on <code>window</code> doesn't react to typing (capture-phase listeners still see them). Opening it also releases pointer lock and leaves element fullscreen.</p>
 
       <h3>Listener example</h3>
       <pre><code>document.querySelector('gh-feedback')
