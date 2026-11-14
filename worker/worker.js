@@ -7,12 +7,31 @@
 
 const TYPE_LABELS = { bug: 'bug', feature: 'enhancement', question: 'question', ui: 'ui', docs: 'documentation', performance: 'performance' };
 const TYPE_DISPLAY = { bug: 'Bug', feature: 'Feature Request', question: 'Question', ui: 'UI', docs: 'Documentation', performance: 'Performance' };
+const SEVERITIES = ['low', 'medium', 'high', 'critical'];
+const MAX_LABEL_LENGTH = 50;      // GitHub's own limit on a label name
+const MAX_CONTEXT_BYTES = 8000;   // JSON size of the context object
+
+/** Stop "@name" from pinging a GitHub user (a zero-width space after the @). */
+function noMentions(s) {
+  return String(s).replace(/@/g, '@\u200B');
+}
+
+/** Make a value safe inside one cell of a Markdown table. */
+function escCell(s) {
+  return noMentions(String(s)
+    .replace(/\r\n|\r|\n/g, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/([|`*_~])/g, '\\$1'));
+}
 
 function corsHeaders(origin, env) {
   const ao = env.ALLOWED_ORIGINS || '*';
   const allowedOrigin = ao === '*' ? '*' : (originAllowed(origin, env) ? origin : 'null');
   return { 'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+    'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
 }
 
 function originAllowed(origin, env) {
@@ -41,29 +60,39 @@ export default {
 
     let body;
     try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400, cors); }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Body must be a JSON object' }, 400, cors);
 
     if (!body.title || typeof body.title !== 'string' || !body.title.trim().length) return json({ error: 'Title is required' }, 400, cors);
     if (body.title.length > 120) return json({ error: 'Title must be 120 characters or fewer' }, 400, cors);
     const type = body.type || 'bug';
-    if (!TYPE_LABELS[type]) return json({ error: 'Invalid type — must be bug, feature, question, ui, docs, or performance' }, 400, cors);
-    if (body.description && typeof body.description === 'string' && body.description.length > 2000)
+    if (typeof type !== 'string' || !Object.hasOwn(TYPE_LABELS, type)) return json({ error: 'Invalid type — must be bug, feature, question, ui, docs, or performance' }, 400, cors);
+    if (body.description != null && typeof body.description !== 'string')
+      return json({ error: 'Description must be a string' }, 400, cors);
+    if (body.description && body.description.length > 2000)
       return json({ error: 'Description must be 2000 characters or fewer' }, 400, cors);
+    if (body.severity != null && body.severity !== '' && !SEVERITIES.includes(body.severity))
+      return json({ error: 'Invalid severity — must be low, medium, high, or critical' }, 400, cors);
+    const hasContext = body.context != null && typeof body.context === 'object' && !Array.isArray(body.context);
+    if (hasContext && JSON.stringify(body.context).length > MAX_CONTEXT_BYTES)
+      return json({ error: `Context must be ${MAX_CONTEXT_BYTES} characters or fewer as JSON` }, 400, cors);
 
-    const desc = body.description || 'No description provided.';
-    let issueBody = `**Type:** ${TYPE_DISPLAY[type] || type}\n\n`;
+    const desc = body.description ? noMentions(body.description) : 'No description provided.';
+    let issueBody = `**Type:** ${TYPE_DISPLAY[type]}\n\n`;
     if (body.severity) issueBody += `**Severity:** ${body.severity}\n\n`;
     issueBody += `${desc}\n\n`;
-    if (body.context && typeof body.context === 'object') {
+    if (hasContext) {
       issueBody += `<details>\n<summary>Context</summary>\n\n| Key | Value |\n|-----|-------|\n`;
-      const escMd = (s) => String(s).replace(/([|`*_~])/g, '\\$1');
-      issueBody += Object.entries(body.context).map(([k, v]) => `| ${escMd(k)} | ${escMd(v)} |`).join('\n');
+      issueBody += Object.entries(body.context).map(([k, v]) => `| ${escCell(k)} | ${escCell(v)} |`).join('\n');
       issueBody += `\n\n</details>\n\n`;
     }
     issueBody += `---\n*Filed via [gh-feedback](https://github.com/zeveck/gh-feedback)*`;
 
     let labels = [TYPE_LABELS[type]];
     if (Array.isArray(body.labels)) {
-      for (const l of body.labels) if (typeof l === 'string' && !labels.includes(l)) labels.push(l);
+      for (const l of body.labels) {
+        if (typeof l !== 'string' || !l.trim() || l.length > MAX_LABEL_LENGTH) continue;
+        if (!labels.includes(l)) labels.push(l);
+      }
     }
     labels = labels.slice(0, 10);
 

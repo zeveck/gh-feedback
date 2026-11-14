@@ -92,7 +92,7 @@ npm init -y
 Open `wrangler.toml` and set these two values:
 
 - **`GITHUB_REPO`** — change to your GitHub repository. Either format works: `"acme/webapp"` or `"https://github.com/acme/webapp"`
-- **`ALLOWED_ORIGINS`** — change `"*"` to your website's URL (e.g., `"https://your-site.com"`). During development, include localhost too: `"https://your-site.com,http://localhost:3000"`. The default `*` allows any site to use your worker — restrict this before going live
+- **`ALLOWED_ORIGINS`** — change `"*"` to your website's URL (e.g., `"https://your-site.com"`). During development, include localhost too: `"https://your-site.com,http://localhost:3000"`. The default `*` allows any site to use your worker — restrict this before going live. Note that this check only stops other websites' pages from calling your worker in a browser: anyone can still send requests to it directly (with curl, for example), so it does not prevent spam
 
 ### 5. Create a GitHub token
 
