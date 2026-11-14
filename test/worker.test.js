@@ -306,4 +306,70 @@ describe('gh-feedback worker', () => {
       assert.notStrictEqual(res.status, 400, `type "${type}" should not return 400`);
     }
   });
+  // Sweep fixes
+  function captureGitHub() {
+    const box = {};
+    globalThis.fetch = async (_url, opts) => {
+      box.sent = JSON.parse(opts.body);
+      return new Response(JSON.stringify({ number: 1, html_url: 'https://github.com/o/r/issues/1' }), { status: 201 });
+    };
+    return box;
+  }
+
+  it('rejects inherited property names as type', async () => {
+    for (const type of ['constructor', 'toString', '__proto__']) {
+      const res = await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', type }), makeEnv());
+      assert.strictEqual(res.status, 400, `type "${type}"`);
+    }
+  });
+
+  it('rejects a non-string description', async () => {
+    const res = await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', description: ['x'.repeat(5000)] }), makeEnv());
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('rejects an oversized context', async () => {
+    const res = await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', context: { a: 'v'.repeat(20000) } }), makeEnv());
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('allows only low, medium, high and critical as severity', async () => {
+    const bad = await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', severity: 'x\n\n# injected' }), makeEnv());
+    assert.strictEqual(bad.status, 400);
+    captureGitHub();
+    const ok = await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', severity: 'critical' }), makeEnv());
+    assert.strictEqual(ok.status, 201);
+  });
+
+  it('drops over-long client labels', async () => {
+    const box = captureGitHub();
+    await worker.fetch(makeRequest('POST', '/feedback', validBody({ labels: ['ok', 'a'.repeat(300)] })), makeEnv());
+    assert.deepStrictEqual(box.sent.labels, ['bug', 'ok']);
+  });
+
+  it('a null or non-object body gets a 400 with CORS headers', async () => {
+    for (const raw of ['null', '42', '"str"', '[]']) {
+      const req = new Request('https://proxy.example.com/feedback', { method: 'POST', headers: { Origin: 'https://mysite.com' }, body: raw });
+      const res = await worker.fetch(req, makeEnv());
+      assert.strictEqual(res.status, 400, raw);
+      assert.ok(res.headers.get('Access-Control-Allow-Origin'), raw);
+    }
+  });
+
+  it('sends Vary: Origin', async () => {
+    const res = await worker.fetch(makeRequest('OPTIONS', '/feedback'), makeEnv({ ALLOWED_ORIGINS: 'https://mysite.com' }));
+    assert.match(res.headers.get('Vary') || '', /Origin/);
+  });
+
+  it('escapes context values for the table and neutralises mentions', async () => {
+    const box = captureGitHub();
+    await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', description: 'hi @octocat',
+      context: { name: 'x\n\n</details>\n\n# Pwned @octocat', path: 'a\\|b' } }), makeEnv());
+    const b = box.sent.body;
+    assert.ok(!b.includes('</details>\n\n# Pwned'), 'newline breakout');
+    assert.ok(b.includes('&lt;/details&gt;'), 'angle brackets escaped');
+    assert.ok(b.includes('a\\\\\\|b'), 'backslash and pipe escaped');
+    assert.ok(!/@octocat/.test(b), 'mentions neutralised');
+    assert.ok(b.includes('hi @​octocat'), 'description mention neutralised');
+  });
 });
