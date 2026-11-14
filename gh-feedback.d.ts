@@ -48,6 +48,10 @@ export interface GhFeedbackEventMap {
   'gh-feedback:filed': CustomEvent<FiledDetail>;
   'gh-feedback:error': CustomEvent<ErrorDetail>;
   'gh-feedback:opened': CustomEvent<OpenedDetail>;
+  /** The popup opened. */
+  'gh-feedback:open': CustomEvent<null>;
+  /** The popup closed. */
+  'gh-feedback:close': CustomEvent<null>;
 }
 
 export declare class GhFeedback extends HTMLElement {
@@ -77,7 +81,10 @@ export declare class GhFeedback extends HTMLElement {
    */
   openLink: ((url: string) => boolean | Promise<boolean>) | null;
 
-  /** Open the feedback popup programmatically. */
+  /** True while the feedback popup is open. */
+  readonly isOpen: boolean;
+
+  /** Open the feedback popup programmatically (if already open, focuses it). */
   open(): void;
 
   /** Close the feedback popup programmatically. */
