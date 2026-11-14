@@ -13,7 +13,7 @@ const MAX_CONTEXT_BYTES = 8000;   // JSON size of the context object
 
 /** Stop "@name" from pinging a GitHub user (a zero-width space after the @). */
 function noMentions(s) {
-  return String(s).replace(/@/g, '@\u200B');
+  return String(s).replace(/(^|[^\w])@(?=\w)/g, '$1@\u200B');
 }
 
 /** Make a value safe inside one cell of a Markdown table. */

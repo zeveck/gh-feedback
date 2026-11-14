@@ -371,5 +371,8 @@ describe('gh-feedback worker', () => {
     assert.ok(b.includes('a\\\\\\|b'), 'backslash and pipe escaped');
     assert.ok(!/@octocat/.test(b), 'mentions neutralised');
     assert.ok(b.includes('hi @​octocat'), 'description mention neutralised');
+    const box2 = captureGitHub();
+    await worker.fetch(makeRequest('POST', '/feedback', { title: 'x', description: 'me@example.com fn@file.js' }), makeEnv());
+    assert.ok(box2.sent.body.includes('me@example.com fn@file.js'), 'emails and stack frames intact');
   });
 });
