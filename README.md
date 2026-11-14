@@ -161,6 +161,7 @@ Things to know:
 - **No server, no secret, no CSP changes:** nothing is fetched. If the browser blocks the new tab, the popup shows a link instead.
 - **Opening the link yourself:** set `openLink` to a function `(url) => true` to open it your own way. For example, in an Electron app, `window.open()` can hand the link to the system browser yet return `null`, which would otherwise read as a blocked tab: `fb.openLink = (url) => { window.open(url); return true; };`
 - `gh-feedback:opened` fires with `{ url, opened, screenshotCopied }` (there's no issue number yet, so `gh-feedback:filed` doesn't fire).
+- `gh-feedback:submit` fires after the screenshot is copied (so its `url` is final): a page that cancels it may find the screenshot already on the clipboard.
 
 ## Direct Mode
 

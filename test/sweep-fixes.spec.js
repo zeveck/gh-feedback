@@ -134,12 +134,13 @@ test('#4 border and colour attributes cannot inject HTML', async ({ page }) => {
     make('x1', { 'border-color': 'red' + evil });
     make('x2', { size: '40', 'button-text': 'Hi', 'border-width': '2px' + evil });
     make('x3', { size: '40', 'button-text': 'Hi', 'border-radius': '3' + evil });
+    make('x6', { 'border-color': 'var(--a, ' + evil + ')' });
     make('x4', { 'border-width': '2', 'border-color': '#333' });
     make('x5', { color: 'red;background:url(x)', 'popup-color': 'blue' });
   }, evil);
   await page.waitForTimeout(200);
   expect(await page.evaluate(() => window.__xss)).toBeUndefined();
-  for (const id of ['x1', 'x2', 'x3']) {
+  for (const id of ['x1', 'x2', 'x3', 'x6']) {
     expect(await root(page, id, `return root.querySelectorAll('img[onerror]').length`)).toBe(0);
   }
   // Valid values still apply
@@ -154,7 +155,7 @@ test('#6 keys and pointer input in the form do not reach the page; isOpen and op
     window._bubble = [];
     window._capture = 0;
     window._events = [];
-    for (const t of ['keydown', 'keyup', 'keypress', 'pointerdown', 'wheel']) {
+    for (const t of ['keydown', 'keyup', 'keypress', 'pointerdown', 'click', 'wheel']) {
       window.addEventListener(t, (e) => window._bubble.push(t));
     }
     window.addEventListener('keydown', () => window._capture++, true);
@@ -217,6 +218,9 @@ test('#11 context values are escaped for the table, and @mentions are neutralise
   expect(body).toContain('a\\\\\\|b');
   expect(body).not.toMatch(/@octocat/);
   expect(body).toContain('hi @​octocat');
+  // Emails and stack frames are left alone
+  expect(await root(page, 's11', `return el._buildIssueBody({ type: 'bug', description: 'me@example.com fn@file.js' })`))
+    .toContain('me@example.com fn@file.js');
 });
 
 test('#12 open() while open just focuses; after a link-mode submit it shows a fresh form', async ({ page }) => {

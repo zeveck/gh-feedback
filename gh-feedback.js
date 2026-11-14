@@ -480,7 +480,7 @@ function canCopyImage() {
 
 /** Stop "@name" from pinging a GitHub user (a zero-width space after the @). */
 function noMentions(s) {
-  return String(s).replace(/@/g, '@\u200B');
+  return String(s).replace(/(^|[^\w])@(?=\w)/g, '$1@\u200B');
 }
 
 /** Make a value safe inside one cell of a Markdown table. */
@@ -496,7 +496,7 @@ function escCell(s) {
 
 /** A CSS colour, or null if the value isn't one. */
 function cssColor(v) {
-  return v && CSS.supports('color', v) ? v : null;
+  return v && CSS.supports('color', v) && !/["'<>&]/.test(v) ? v : null;
 }
 
 function esc(str) {
@@ -548,7 +548,7 @@ class GhFeedback extends HTMLElement {
       if (e.type === 'keydown' && e.key === 'Escape') this._close();
     };
     for (const t of ['keydown', 'keyup', 'keypress', 'pointerdown', 'pointerup', 'pointermove',
-      'mousedown', 'mouseup', 'mousemove', 'touchstart', 'touchmove', 'touchend', 'wheel']) {
+      'mousedown', 'mouseup', 'mousemove', 'click', 'dblclick', 'contextmenu', 'touchstart', 'touchmove', 'touchend', 'wheel']) {
       this.shadowRoot.addEventListener(t, stop);
     }
   }
@@ -1000,7 +1000,7 @@ class GhFeedback extends HTMLElement {
 
     // A game may hold the pointer or have its canvas fullscreen: release both so the popup can be used.
     document.exitPointerLock?.();
-    if (document.fullscreenElement && document.fullscreenElement !== document.documentElement) {
+    if (document.fullscreenElement && !document.fullscreenElement.contains(this)) {
       document.exitFullscreen?.()?.catch?.(() => {});
     }
 
