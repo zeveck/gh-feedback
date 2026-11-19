@@ -11,11 +11,7 @@
     }
   },
   "sideEffects": true,
-  "files": [
-    "gh-feedback.js",
-    "gh-feedback.d.ts",
-    "examples"
-  ],
+  "files": ["gh-feedback.js", "gh-feedback.d.ts", "examples"],
   "types": "gh-feedback.d.ts",
   "scripts": {
     "test": "node --test test/worker.test.js",
@@ -26,12 +22,7 @@
     "@playwright/test": "^1.50.0",
     "serve": "^14.0.0"
   },
-  "keywords": [
-    "web-component",
-    "feedback",
-    "github-issues",
-    "custom-element"
-  ],
+  "keywords": ["web-component", "feedback", "github-issues", "custom-element"],
   "author": "zeveck",
   "license": "MIT",
   "repository": {
