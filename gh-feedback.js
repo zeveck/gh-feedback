@@ -847,10 +847,10 @@ class GhFeedback extends HTMLElement {
       <style>${STYLES}</style>
       ${triggerHtml}
       <div class="backdrop" part="backdrop"></div>
-      <div class="popup${popupPosClass}" role="dialog" aria-label="${esc(heading)}" part="popup">
+      <div class="popup${popupPosClass}" role="dialog" aria-labelledby="ghf-heading" part="popup">
         <div class="form-view">
           <div class="header">
-            <h2>${esc(heading)}</h2>
+            <h2 id="ghf-heading">${esc(heading)}</h2>
             <button class="close-btn" aria-label="Close">&times;</button>
           </div>
           <div class="type-selector${types.length > 3 ? ' multi-row' : ''}">
