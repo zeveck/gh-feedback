@@ -50,6 +50,7 @@ A hosted copy is also available as a convenience:
 | `theme` | `string` | `light` | Popup color theme: `light` or `dark`. |
 | `labels` | `string` | — | Comma-separated labels added to every issue (e.g., `"feedback,user-reported"`). Merged with the type-derived label. Proxy and direct modes only: in link mode, put labels in the issue form. |
 | `button-text` | `string` | — | Text shown on the trigger. For FAB, makes it pill-shaped. |
+| `heading` | `string` | `Send Feedback` | The popup's title (and its accessible name), e.g. `Report a bug`. |
 | `no-severity` | boolean | — | When present, hides the severity selector. Severity (Low / Medium / High / Critical) is shown by default for bug reports. |
 | `border-color` | `string` | — | Border color on the trigger element. |
 | `border-width` | `string` | — | Border width in pixels on the trigger element. |
@@ -228,6 +229,8 @@ Override example:
 </style>
 <gh-feedback repo="https://github.com/you/repo" endpoint="..." theme="dark"></gh-feedback>
 ```
+
+The form uses a system font. To match your page's, set it on the element (`gh-feedback { font-family: inherit; }`, or a font of your own): every part of the form, buttons included, follows it.
 
 ## Events
 

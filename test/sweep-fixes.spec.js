@@ -250,3 +250,23 @@ test('#13 opening releases pointer lock and exits canvas fullscreen', async ({ p
   await root(page, 's13', 'el.open()');
   expect(await page.evaluate(() => window._calls)).toEqual(['exitPointerLock', 'exitFullscreen']);
 });
+
+test('#6 buttons follow the form\'s font, and the heading can be changed', async ({ page }) => {
+  await page.addStyleTag({ content: '#s14 { font-family: "Courier New", monospace; }' });
+  await addEl(page, '<gh-feedback id="s14" repo="o/r" mode="link" trigger="none" heading="Report a &quot;bug&quot; &lt;here&gt;"></gh-feedback>');
+  await openAndWait(page, 's14');
+  const r = await root(page, 's14', `return {
+    h: root.querySelector('h2').textContent,
+    name: root.getElementById(root.querySelector('.popup').getAttribute('aria-labelledby')).textContent,
+    extra: root.querySelectorAll('.popup [onmouseover], .popup here').length,
+    fonts: [...root.querySelectorAll('.popup button')].map((b) => getComputedStyle(b).fontFamily),
+  };`);
+  expect(r.h).toBe('Report a "bug" <here>');
+  expect(r.name).toBe('Report a "bug" <here>');
+  expect(r.extra).toBe(0);
+  expect(r.fonts.length).toBeGreaterThan(2);
+  for (const f of r.fonts) expect(f).toContain('Courier New');
+  // Without the attribute, the title is unchanged.
+  await addEl(page, '<gh-feedback id="s15" repo="o/r" mode="link" trigger="none"></gh-feedback>');
+  expect(await root(page, 's15', `return root.querySelector('h2').textContent`)).toBe('Send Feedback');
+});
