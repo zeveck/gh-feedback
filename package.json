@@ -1,6 +1,6 @@
 {
   "name": "@zeveck/gh-feedback",
-  "version": "2026.11.14",
+  "version": "2026.11.19",
   "description": "A Web Component that adds a feedback button to any site and files GitHub Issues",
   "type": "module",
   "main": "gh-feedback.js",
@@ -11,7 +11,11 @@
     }
   },
   "sideEffects": true,
-  "files": ["gh-feedback.js", "gh-feedback.d.ts", "examples"],
+  "files": [
+    "gh-feedback.js",
+    "gh-feedback.d.ts",
+    "examples"
+  ],
   "types": "gh-feedback.d.ts",
   "scripts": {
     "test": "node --test test/worker.test.js",
@@ -22,7 +26,12 @@
     "@playwright/test": "^1.50.0",
     "serve": "^14.0.0"
   },
-  "keywords": ["web-component", "feedback", "github-issues", "custom-element"],
+  "keywords": [
+    "web-component",
+    "feedback",
+    "github-issues",
+    "custom-element"
+  ],
   "author": "zeveck",
   "license": "MIT",
   "repository": {
